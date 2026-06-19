@@ -3,248 +3,747 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Suivi Pose — Admin · Leroy Merlin</title>
+<title>Suivi Pose · Leroy Merlin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
-:root{--green:#78BE20;--gd:#5a9118;--gl:#e8f5d0;--gx:#f4fae8;--black:#1a1a1a;--gray:#f5f5f5;--mid:#e0e0e0;--muted:#666}
-.btn{padding:7px 16px;border-radius:4px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
-.btn-primary{background:var(--green);color:white}.btn-primary:hover{background:var(--gd)}
-.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:white}.btn-outline:hover{border-color:var(--green);color:var(--green)}
+:root{--g:#78BE20;--gd:#5a9118;--gl:#e8f5d0;--gx:#f4fae8;--blk:#1a1a1a;--mid:#e0e0e0;--mut:#666}
+.btn{padding:7px 16px;border-radius:4px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-p{background:var(--g);color:white}.btn-p:hover{background:var(--gd)}
+.btn-o{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:white}.btn-o:hover{border-color:var(--g);color:var(--g)}
+.btn-d{background:var(--blk);color:white}.btn-d:hover{background:#333}
 .btn-sm{padding:5px 12px;font-size:12px}
-.btn-dark{background:var(--black);color:white}.btn-dark:hover{background:#333}
-.btn-danger{background:#e53935;color:white}.btn-danger:hover{background:#c62828}
-.header{background:var(--black);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+/* HEADER */
+.hdr{background:var(--blk);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:10px;cursor:pointer}
-.logo-triangle{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid var(--green)}
-.logo-text{color:white;font-size:14px;font-weight:700;letter-spacing:.5px;line-height:1.2}
-.logo-sub{font-size:10px;color:var(--green);font-weight:400;letter-spacing:1px;text-transform:uppercase}
-.page{padding:24px;max-width:1100px;margin:0 auto}
-.page-title{font-size:22px;font-weight:700;margin-bottom:4px}
-.page-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
-.tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--mid)}
-.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
-.tab.active{color:var(--green);border-bottom-color:var(--green)}
-.dossiers-grid{display:flex;flex-direction:column;gap:10px}
-.dossier-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s;gap:16px}
-.dossier-card:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(120,190,32,.12)}
-.dossier-info{flex:1;min-width:0}
-.dossier-nom{font-size:15px;font-weight:700}
-.dossier-meta{font-size:12px;color:var(--muted);margin-top:2px}
-.step-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
-.step-1{background:#fff3e0;color:#e65100}.step-2{background:#e3f2fd;color:#1565c0}
-.step-3{background:#f3e5f5;color:#6a1b9a}.step-4{background:#fce4ec;color:#880e4f}
-.step-5{background:#e8f5d0;color:#3a7008}.step-6{background:var(--green);color:white}
-.dossier-prix{font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap}
-.dossier-actions{display:flex;gap:6px}
-.form-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:24px;margin-bottom:20px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group.full{grid-column:1/-1}
-label{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.5px}
-input,select,textarea{padding:9px 12px;border:1.5px solid var(--mid);border-radius:5px;font-size:14px;font-family:inherit;transition:border-color .15s;background:white;color:var(--black)}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
-textarea{resize:vertical;min-height:72px}
-.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.detail-header{background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-.detail-nom{font-size:20px;font-weight:700}
-.detail-meta{font-size:13px;color:var(--muted);margin-top:4px}
-.detail-cols{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
-.info-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-bottom:12px}
-.info-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}
-.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
-.info-row:last-child{border-bottom:none}
-.info-label{color:var(--muted)}.info-value{font-weight:600}
-.admin-tl{display:flex;flex-direction:column;gap:0}
-.tl-item{display:flex;gap:14px;align-items:flex-start;position:relative}
-.tl-item:not(:last-child) .tl-line{position:absolute;left:11px;top:26px;width:2px;bottom:-10px;background:var(--mid)}
-.tl-item.done:not(:last-child) .tl-line{background:var(--green)}
-.tl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;position:relative;z-index:1}
-.tl-dot.done{background:var(--green);color:white}.tl-dot.current{background:var(--gl);border:2px solid var(--green);color:var(--gd)}.tl-dot.pending{background:white;border:2px solid var(--mid);color:#bbb}
-.tl-content{flex:1;padding-bottom:20px}.tl-title{font-size:13px;font-weight:700}.tl-date{font-size:11px;color:var(--muted);margin-top:2px}
-.step-selector{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.step-btn{width:100%;text-align:left;padding:8px 12px;border-radius:5px;border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;background:var(--gray);color:var(--black);transition:all .15s}
-.step-btn:hover{background:var(--gl);border-color:var(--green);color:var(--gd)}.step-btn.selected{background:var(--green);color:white;border-color:var(--green)}
-.progress-bar{height:6px;background:var(--mid);border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .5s}
-.badge-signe{background:var(--green);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px}
-.loading-bar{height:3px;background:var(--green);animation:slide 1.5s infinite;display:none;position:fixed;top:0;left:0;right:0;z-index:999}
-@keyframes slide{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:white;padding:12px 20px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:320px}
-.toast.show{opacity:1;transform:translateY(0)}
+.tri{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid var(--g)}
+.logo-t{color:white;font-size:14px;font-weight:700;line-height:1.2}
+.logo-s{font-size:10px;color:var(--g);font-weight:400;letter-spacing:1px;text-transform:uppercase}
 /* LOGIN */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--black)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--blk)}
 .login-card{background:white;border-radius:12px;padding:40px 36px;width:340px;text-align:center}
-.login-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
-.login-triangle{width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:34px solid var(--green)}
-.login-title{font-size:20px;font-weight:800;color:var(--black);margin-bottom:4px}
-.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
-.login-error{color:#e53935;font-size:13px;margin-top:10px;min-height:18px}
-@media(max-width:680px){.detail-cols{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+/* ADMIN */
+.page{padding:24px;max-width:1100px;margin:0 auto}
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--mid)}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:var(--g);border-bottom-color:var(--g)}
+.dos-grid{display:flex;flex-direction:column;gap:10px}
+.dos-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s}
+.dos-card:hover{border-color:var(--g);box-shadow:0 2px 8px rgba(120,190,32,.12)}
+.sp{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.sp1{background:#fff3e0;color:#e65100}.sp2{background:#e3f2fd;color:#1565c0}.sp3{background:#f3e5f5;color:#6a1b9a}
+.sp4{background:#fce4ec;color:#880e4f}.sp5{background:#e8f5d0;color:#3a7008}.sp6{background:var(--g);color:white}
+/* FORM */
+.form-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:24px;margin-bottom:20px}
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.5px}
+input,textarea{padding:9px 12px;border:1.5px solid var(--mid);border-radius:5px;font-size:14px;font-family:inherit;background:white;color:var(--blk)}
+input:focus,textarea:focus{outline:none;border-color:var(--g)}
+textarea{resize:vertical;min-height:72px}
+/* DETAIL */
+.ic{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-bottom:12px}
+.ict{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:12px}
+.ir{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.ir:last-child{border:none}
+/* TIMELINE ADMIN */
+.atl{display:flex;flex-direction:column}
+.tli{display:flex;gap:14px;align-items:flex-start;position:relative}
+.tli:not(:last-child) .tll{position:absolute;left:11px;top:26px;width:2px;bottom:-10px;background:var(--mid)}
+.tli.done:not(:last-child) .tll{background:var(--g)}
+.tld{width:24px;height:24px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;position:relative;z-index:1}
+.tld.done{background:var(--g);color:white}.tld.current{background:var(--gl);border:2px solid var(--g);color:var(--gd)}.tld.pending{background:white;border:2px solid var(--mid);color:#bbb}
+.tlc{flex:1;padding-bottom:20px}
+.step-sel{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.step-btn{width:100%;text-align:left;padding:8px 12px;border-radius:5px;border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;background:#f5f5f5;color:var(--blk);transition:all .15s}
+.step-btn:hover{background:var(--gl);border-color:var(--g);color:var(--gd)}.step-btn.sel{background:var(--g);color:white;border-color:var(--g)}
+.pb{height:6px;background:var(--mid);border-radius:3px;overflow:hidden;margin:10px 0 4px}
+.pf{height:100%;background:var(--g);border-radius:3px}
+/* CLIENT */
+.cli-hdr{background:var(--blk);padding:0 24px;height:56px;display:flex;align-items:center;gap:12px}
+.cli-body{max-width:860px;margin:0 auto;padding:24px 16px}
+.wc{background:white;border-radius:10px;border:1px solid var(--mid);overflow:hidden;margin-bottom:16px}
+.wb{background:var(--g);padding:20px 24px;position:relative;overflow:hidden}
+.wb::after{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.08);border-radius:50%}
+.wt{color:white;font-size:18px;font-weight:800}
+.ws{color:rgba(255,255,255,.8);font-size:13px;margin-top:4px}
+.wbd{padding:20px 24px}
+.cig{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.cib{background:#f5f5f5;border-radius:6px;padding:12px 14px}
+.cibl{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.cibv{font-size:16px;font-weight:800;margin-top:2px}
+.stl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:14px}
+/* TIMELINE CLIENT PC */
+.only-pc{display:flex}.only-mob{display:none}
+.ctl-pc{display:flex;flex-direction:row-reverse;width:100%;overflow-x:auto;padding:0 8px}
+.cst{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:90px;opacity:0;animation:fi .4s ease forwards}
+.cst:not(:first-child)::before{content:'';position:absolute;right:50%;top:19px;width:100%;height:2px;background:var(--mid);z-index:0}
+.cst.cdone:not(:first-child)::before{background:var(--g)}
+.cst.ccur:not(:first-child)::before{background:linear-gradient(to left,var(--g),var(--mid))}
+.cico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;z-index:1}
+.cico.done{background:var(--g);color:white;font-size:18px}
+.cico.cur{background:white;border:3px solid var(--g);color:var(--g);animation:pulse 2s ease infinite}
+.cico.pend{background:#f0f0f0;color:#ccc}
+.clbl{font-size:11px;font-weight:700;text-align:center;margin-top:8px;line-height:1.3;padding:0 4px}
+.clbl.done{color:var(--gd)}.clbl.cur{color:var(--blk)}.clbl.pend{color:#bbb}
+.cdt{font-size:10px;color:var(--mut);margin-top:3px;text-align:center}
+.cbadge{display:inline-block;background:var(--g);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;text-transform:uppercase}
+/* TIMELINE CLIENT MOBILE */
+.ctl-mob{display:flex;flex-direction:column-reverse}
+.mst{display:flex;gap:14px;align-items:flex-start;position:relative;transform:translateY(10px);opacity:0;animation:fu .4s ease forwards}
+.mst:not(:first-child) .mln{position:absolute;left:15px;bottom:-4px;width:2px;top:34px;background:var(--mid)}
+.mst.mdone:not(:first-child) .mln{background:var(--g)}
+.mst.mcur:not(:first-child) .mln{background:linear-gradient(to bottom,var(--mid),var(--g))}
+.mico{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;z-index:1;margin-top:2px}
+.mico.done{background:var(--g);color:white}.mico.cur{background:white;border:2.5px solid var(--g);color:var(--g);animation:pulse 2s ease infinite}.mico.pend{background:#f5f5f5;color:#ccc}
+.mct{flex:1;padding-bottom:18px}.mtt{font-size:14px;font-weight:700}.mtt.pend{color:#bbb}.mdt{font-size:11px;color:var(--mut);margin-top:2px}
+/* CONTACT */
+.cc{background:var(--blk);color:white;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-top:8px}
+.cav{width:40px;height:40px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+/* SIGNATURE */
+.sc{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-top:14px}
+.ss{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:6px;font-size:13px;font-weight:600}
+.ss.u{background:#fff8e1;color:#e65100}.ss.s{background:var(--gl);color:var(--gd)}
+.uz{border:2px dashed var(--mid);border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;background:white;margin:12px 0;transition:all .2s}
+.uz:hover{border-color:var(--g);background:var(--gx)}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--g);color:white;padding:12px 20px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.lbar{height:3px;background:var(--g);animation:sl 1.5s infinite;display:none;position:fixed;top:0;left:0;right:0;z-index:999}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(120,190,32,.4)}50%{box-shadow:0 0 0 7px rgba(120,190,32,0)}}
+@keyframes fu{to{opacity:1;transform:translateY(0)}}
+@keyframes fi{to{opacity:1}}
+@keyframes sl{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+@media(max-width:680px){.only-pc{display:none!important}.only-mob{display:flex!important;flex-direction:column}.dcols{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
-<div class="loading-bar" id="loading-bar"></div>
+<div class="lbar" id="lbar"></div>
+<div class="toast" id="toast"></div>
 
 <!-- LOGIN -->
-<div id="view-login" class="login-wrap">
+<div id="vLogin" class="login-wrap">
   <div class="login-card">
-    <div class="login-logo"><div class="login-triangle"></div><div style="font-size:18px;font-weight:800;color:var(--black)">LEROY MERLIN</div></div>
-    <div class="login-title">Interface Admin</div>
-    <div class="login-sub">Suivi dossiers de pose</div>
-    <input type="password" id="login-pwd" placeholder="Mot de passe" style="width:100%;margin-bottom:10px">
-    <button class="btn btn-primary" style="width:100%" onclick="login()">Connexion</button>
-    <div class="login-error" id="login-error"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px">
+      <div class="tri"></div>
+      <div style="font-size:18px;font-weight:800">LEROY MERLIN</div>
+    </div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px">Interface Admin</div>
+    <div style="font-size:13px;color:var(--mut);margin-bottom:20px">Suivi dossiers de pose</div>
+    <input type="password" id="lpwd" placeholder="Mot de passe" style="width:100%;margin-bottom:10px" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-p" style="width:100%" onclick="doLogin()">Connexion</button>
+    <div id="lerr" style="color:#e53935;font-size:13px;margin-top:10px;min-height:18px"></div>
   </div>
 </div>
 
 <!-- ADMIN -->
-<div id="view-admin" style="display:none">
-  <div class="header">
-    <div class="logo">
-      <div class="logo-triangle"></div>
-      <div class="logo-text">LEROY MERLIN<br><span class="logo-sub">Suivi pose — Admin</span></div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-primary" onclick="showTab('nouveau')">+ Nouveau dossier</button>
-      <button class="btn btn-outline btn-sm" onclick="loadDossiers()">↻ Actualiser</button>
-      <button class="btn btn-outline btn-sm" onclick="logout()">Déconnexion</button>
+<div id="vAdmin" style="display:none">
+  <div class="hdr">
+    <div class="logo"><div class="tri"></div><div class="logo-t">LEROY MERLIN<br><span class="logo-s">Admin · Suivi pose</span></div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p btn-sm" onclick="showTab('new')">+ Nouveau</button>
+      <button class="btn btn-o btn-sm" onclick="loadAll()">↻</button>
+      <button class="btn btn-o btn-sm" onclick="doLogout()">Déco</button>
     </div>
   </div>
-
-  <!-- LISTE -->
-  <div id="view-liste">
+  <div id="vListe">
     <div class="page">
-      <div class="page-title">Dossiers de pose</div>
-      <div class="page-sub">Gérez vos clients et partagez-leur leur lien de suivi personnalisé.</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px">Dossiers de pose</div>
+      <div style="font-size:13px;color:var(--mut);margin-bottom:20px">Gérez vos clients et partagez leur lien de suivi.</div>
       <div class="tab-bar">
         <button class="tab active" onclick="filterTab('tous',this)">Tous</button>
-        <button class="tab" onclick="filterTab('en-cours',this)">En cours</button>
-        <button class="tab" onclick="filterTab('termine',this)">Terminés</button>
+        <button class="tab" onclick="filterTab('cours',this)">En cours</button>
+        <button class="tab" onclick="filterTab('fin',this)">Terminés</button>
       </div>
-      <div id="liste-dossiers" class="dossiers-grid"></div>
-
-      <!-- FORMULAIRE -->
-      <div id="form-nouveau" style="display:none;margin-top:20px">
+      <div id="listeDos" class="dos-grid"></div>
+      <div id="formNew" style="display:none;margin-top:20px">
         <div class="form-card">
-          <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="color:var(--green)">▶</span> Nouveau dossier client</div>
-          <div class="form-grid">
-            <div class="form-group"><label>Nom du client</label><input id="f-nom" type="text" placeholder="Jean Dupont"></div>
-            <div class="form-group"><label>Gamme choisie</label><input id="f-gamme" type="text" placeholder="Parquet chêne clair"></div>
-            <div class="form-group"><label>Téléphone client</label><input id="f-tel" type="text" placeholder="06 xx xx xx xx"></div>
-            <div class="form-group"><label>Email client</label><input id="f-email" type="email" placeholder="client@exemple.fr"></div>
-            <div class="form-group"><label>Conseiller</label><input id="f-conseiller" type="text" placeholder="Sophie Leclerc"></div>
-            <div class="form-group"><label>Tél. conseiller</label><input id="f-telc" type="text" placeholder="03 xx xx xx xx"></div>
-            <div class="form-group"><label>Devis estimatif (€)</label><input id="f-prix-est" type="number" placeholder="2800"></div>
-            <div class="form-group"><label>Prix final (€)</label><input id="f-prix-final" type="number" placeholder="3100"></div>
-            <div class="form-group full"><label>Notes</label><textarea id="f-notes" placeholder="Informations complémentaires..."></textarea></div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px">▶ Nouveau dossier</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="fg"><label>Nom client</label><input id="fnom" placeholder="Jean Dupont"></div>
+            <div class="fg"><label>Gamme</label><input id="fgam" placeholder="Parquet chêne"></div>
+            <div class="fg"><label>Téléphone</label><input id="ftel" placeholder="06 xx xx xx xx"></div>
+            <div class="fg"><label>Email</label><input id="feml" type="email" placeholder="client@mail.fr"></div>
+            <div class="fg"><label>Conseiller</label><input id="fcon" placeholder="Sophie Leclerc"></div>
+            <div class="fg"><label>Tél. conseiller</label><input id="ftlc" placeholder="03 xx xx xx xx"></div>
+            <div class="fg"><label>Estimatif (€)</label><input id="fest" type="number" placeholder="2800"></div>
+            <div class="fg"><label>Prix final (€)</label><input id="fpfin" type="number" placeholder="3100"></div>
+            <div class="fg" style="grid-column:1/-1"><label>Notes</label><textarea id="fnot" placeholder="Notes..."></textarea></div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-outline btn-dark" onclick="showTab('liste')">Annuler</button>
-            <button class="btn btn-primary" onclick="creerDossier()">Créer le dossier</button>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
+            <button class="btn btn-p" onclick="creerDos()">Créer</button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- DÉTAIL -->
-  <div id="view-detail" style="display:none">
+  <div id="vDetail" style="display:none">
     <div class="page">
-      <button style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:16px;background:none;border:none;padding:0" onclick="document.getElementById('view-detail').style.display='none';document.getElementById('view-liste').style.display='block'">← Retour à la liste</button>
-      <div id="detail-content"></div>
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;margin-bottom:16px" onclick="goListe()">← Retour</button>
+      <div id="detailCont"></div>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<!-- VUE CLIENT (affichée quand token dans URL) -->
-<div id="view-client" style="display:none">
-  <div class="client-header" style="background:#1a1a1a;padding:0 24px;height:56px;display:flex;align-items:center;gap:12px">
-    <div style="width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid #78BE20"></div>
-    <div style="color:white;font-size:14px;font-weight:700;line-height:1.2">LEROY MERLIN<br><span style="font-size:10px;color:#78BE20;font-weight:400;letter-spacing:1px;text-transform:uppercase">Suivi de votre pose</span></div>
+<!-- CLIENT -->
+<div id="vClient" style="display:none">
+  <div class="cli-hdr">
+    <div class="tri"></div>
+    <div class="logo-t" style="color:white">LEROY MERLIN<br><span class="logo-s">Suivi de votre pose</span></div>
   </div>
-  <div style="max-width:860px;margin:0 auto;padding:24px 16px" id="client-body">
-    <div style="text-align:center;padding:60px 20px;color:#aaa"><div style="font-size:32px;margin-bottom:12px">⏳</div>Chargement...</div>
+  <div class="cli-body">
+    <div id="cliBody"><div style="text-align:center;padding:60px;color:#aaa"><div style="font-size:32px;margin-bottom:12px">⏳</div>Chargement...</div></div>
   </div>
 </div>
-<style>
-.only-pc{display:flex}.only-mobile{display:none}
-.client-tl-pc{display:flex;flex-direction:row-reverse;align-items:flex-start;gap:0;position:relative;padding:0 12px;overflow-x:auto;width:100%}
-.cstep{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:90px;opacity:0;animation:fadeIn .4s ease forwards}
-.cstep:not(:first-child)::before{content:'';position:absolute;right:50%;top:19px;width:100%;height:2px;background:#e0e0e0;z-index:0}
-.cstep.cdone:not(:first-child)::before{background:#78BE20}
-.cstep.ccurrent:not(:first-child)::before{background:linear-gradient(to left,#78BE20,#e0e0e0)}
-.cicon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;z-index:1}
-.cicon.done{background:#78BE20;color:white;font-size:18px}
-.cicon.current{background:white;border:3px solid #78BE20;color:#78BE20;animation:pulse 2s ease infinite}
-.cicon.pending{background:#f0f0f0;color:#ccc}
-.clabel{font-size:11px;font-weight:700;text-align:center;margin-top:8px;line-height:1.3;padding:0 4px}
-.clabel.done{color:#5a9118}.clabel.current{color:#1a1a1a}.clabel.pending{color:#bbb}
-.cdate{font-size:10px;color:#666;margin-top:3px;text-align:center}
-.current-badge-h{display:inline-block;background:#78BE20;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
-.client-tl-mobile{display:flex;flex-direction:column-reverse;gap:0}
-.mstep{display:flex;gap:14px;align-items:flex-start;position:relative;transform:translateY(10px);opacity:0;animation:fadeUp .4s ease forwards}
-.mstep:not(:first-child) .mline{position:absolute;left:15px;bottom:-4px;width:2px;top:34px;background:#e0e0e0}
-.mstep.mdone:not(:first-child) .mline{background:#78BE20}
-.mstep.mcurrent:not(:first-child) .mline{background:linear-gradient(to bottom,#e0e0e0,#78BE20)}
-.micon{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;z-index:1;margin-top:2px}
-.micon.done{background:#78BE20;color:white}.micon.current{background:white;border:2.5px solid #78BE20;color:#78BE20;animation:pulse 2s ease infinite}.micon.pending{background:#f5f5f5;color:#ccc}
-.mcontent{flex:1;padding-bottom:18px}.mtitle{font-size:14px;font-weight:700}.mtitle.pending{color:#bbb}.mdate{font-size:11px;color:#666;margin-top:2px}
-.welcome-card{background:white;border-radius:10px;border:1px solid #e0e0e0;overflow:hidden;margin-bottom:16px}
-.welcome-banner{background:#78BE20;padding:20px 24px;position:relative;overflow:hidden}
-.welcome-banner::after{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(255,255,255,.08);border-radius:50%}
-.welcome-title{color:white;font-size:18px;font-weight:800}
-.welcome-sub{color:rgba(255,255,255,.8);font-size:13px;margin-top:4px}
-.welcome-body{padding:20px 24px}
-.client-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
-.client-info-box{background:#f5f5f5;border-radius:6px;padding:12px 14px}
-.client-info-box-label{font-size:11px;color:#666;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.client-info-box-val{font-size:16px;font-weight:800;margin-top:2px}
-.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:14px}
-.info-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666}
-.contact-card{background:#1a1a1a;color:white;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-top:8px}
-.contact-avatar{width:40px;height:40px;border-radius:50%;background:#78BE20;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
-.contact-name{font-weight:700;font-size:14px}.contact-role{font-size:12px;color:rgba(255,255,255,.6);margin-top:1px}.contact-tel{font-size:13px;color:#78BE20;font-weight:600;margin-top:4px}
-.sign-card{background:white;border-radius:8px;border:1px solid #e0e0e0;padding:18px 20px;margin-top:14px}
-.sign-status{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:6px;font-size:13px;font-weight:600}
-.sign-status.unsigned{background:#fff8e1;color:#e65100}.sign-status.signed{background:#e8f5d0;color:#5a9118}
-.upload-zone{border:2px dashed #e0e0e0;border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:white;margin:12px 0}
-.upload-zone:hover{border-color:#78BE20;background:#f4fae8}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(120,190,32,.4)}50%{box-shadow:0 0 0 7px rgba(120,190,32,0)}}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{to{opacity:1}}
-@media(max-width:680px){.only-pc{display:none!important}.only-mobile{display:flex!important;flex-direction:column}}
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="config.js"></script>
-<script src="sheets.js"></script>
-<script src="pdf.js"></script>
-<script src="app.js"></script>
-<script src="client.js"></script>
-<script>
-// Détection automatique : si l'URL contient /client/ ou ?token=, afficher la vue client
-(function() {
-  const params = new URLSearchParams(location.search);
-  const hasToken = params.get('token');
-  const inClientPath = location.pathname.includes('/client/') ||
-    (location.pathname.split('/').filter(Boolean).length > 0 &&
-     !['index.html','admin'].includes(location.pathname.split('/').pop()));
 
-  if (hasToken || inClientPath) {
-    // Masquer admin, afficher vue client
-    document.addEventListener('DOMContentLoaded', () => {
-      const loginEl = document.getElementById('view-login');
-      const adminEl = document.getElementById('view-admin');
-      const clientEl = document.getElementById('view-client');
-      if (loginEl) loginEl.style.display = 'none';
-      if (adminEl) adminEl.style.display = 'none';
-      if (clientEl) clientEl.style.display = 'block';
-    });
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CFG = {
+  SHEET_ID:    '1zbnly7aZ8AzZlJDsQA5I3hiKAbD2zlpXedvyNcdtsAQ',
+  API_KEY:     'AIzaSyCyvTQg8tzasPEvi2-fDtNkO2n6KEcDL-8',
+  SHEET_NAME:  'Feuille 1',
+  ADMIN_PWD:   'leroy2025',
+  SCRIPT_URL:  'https://script.google.com/macros/s/AKfycbzVyE-VoVVtr9iuw3tsW38Iw-lbT_YGlneYlQpRznG9p-PjIfOAWWvNoMhF7FdhUe-Fcg/exec',
+};
+
+const STEPS = [
+  {l:'Démarche lancée',    i:'🚀'},
+  {l:'Rendez-vous planifié',i:'📅'},
+  {l:'Retour technicien',  i:'📐'},
+  {l:'Devis final envoyé', i:'📋'},
+  {l:'Commande confirmée', i:'✅'},
+  {l:'Pose effectuée',     i:'🏠'},
+];
+
+// ============================================================
+// ROUTING — détecte si on est côté client ou admin
+// ============================================================
+function getToken() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('token')) return p.get('token');
+  const parts = location.pathname.split('/').filter(Boolean);
+  const idx = parts.indexOf('client');
+  if (idx !== -1 && parts[idx+1]) return parts[idx+1];
+  return null;
+}
+
+function init() {
+  const token = getToken();
+  if (token) {
+    // Mode client
+    show('vClient');
+    initClient(token);
+  } else if (sessionStorage.getItem('lm_auth') === 'ok') {
+    show('vAdmin');
+    loadAll();
+  } else {
+    show('vLogin');
   }
-})();
+}
+
+function show(id) {
+  ['vLogin','vAdmin','vClient'].forEach(v => {
+    document.getElementById(v).style.display = v === id ? 'block' : 'none';
+  });
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function doLogin() {
+  if (document.getElementById('lpwd').value === CFG.ADMIN_PWD) {
+    sessionStorage.setItem('lm_auth','ok');
+    show('vAdmin');
+    loadAll();
+  } else {
+    document.getElementById('lerr').textContent = 'Mot de passe incorrect.';
+  }
+}
+function doLogout() { sessionStorage.removeItem('lm_auth'); show('vLogin'); }
+
+// ============================================================
+// SHEETS
+// ============================================================
+let _dos = [];
+
+async function sheetsGetAll() {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(CFG.SHEET_NAME)}?key=${CFG.API_KEY}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Sheets ' + r.status);
+  const d = await r.json();
+  if (!d.values || d.values.length < 2) return [];
+  const [h, ...rows] = d.values;
+  return rows.map(row => { const o={}; h.forEach((k,i)=>o[k]=row[i]||''); return o; });
+}
+
+async function sheetsWrite(action, payload) {
+  await fetch(CFG.SCRIPT_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action,...payload})
+  });
+}
+
+function genToken() { return Math.random().toString(36).slice(2,10); }
+async function nextId() {
+  const all = await sheetsGetAll();
+  const max = Math.max(0,...all.map(d=>parseInt(d.id?.replace('DOS-',''))||0));
+  return 'DOS-'+String(max+1).padStart(3,'0');
+}
+
+// ============================================================
+// ADMIN — LISTE
+// ============================================================
+async function loadAll() {
+  document.getElementById('lbar').style.display = 'block';
+  try { _dos = await sheetsGetAll(); } catch(e) { toast('Erreur connexion Sheets'); _dos=[]; }
+  document.getElementById('lbar').style.display = 'none';
+  renderListe();
+}
+
+function renderListe(f) {
+  let list = _dos;
+  if (f==='cours') list = _dos.filter(d=>parseInt(d.etape)<6);
+  if (f==='fin')   list = _dos.filter(d=>parseInt(d.etape)===6);
+  const cont = document.getElementById('listeDos');
+  if (!list.length) { cont.innerHTML='<div style="color:#aaa;padding:20px 0">Aucun dossier.</div>'; return; }
+  cont.innerHTML = list.map(d => {
+    const e=parseInt(d.etape)||1, s=STEPS[e-1];
+    const prix = d.prix_final ? parseInt(d.prix_final).toLocaleString('fr-FR')+' €' : '—';
+    return `<div class="dos-card" onclick="openDetail('${d.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="color:var(--g);font-size:11px;margin-left:8px">✓ Signé</span>':''}</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:2px">${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
+      </div>
+      <span class="sp sp${e}">${s.l}</span>
+      <div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>
+      <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')">🔗 Lien</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterTab(f,btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('formNew').style.display='none';
+  renderListe(f);
+}
+
+function showTab(t) {
+  document.getElementById('formNew').style.display = t==='new'?'block':'none';
+}
+
+// ============================================================
+// ADMIN — CRÉER
+// ============================================================
+async function creerDos() {
+  const nom = document.getElementById('fnom').value.trim();
+  if (!nom) { toast('Nom requis'); return; }
+  const id = await nextId();
+  const token = genToken();
+  const today = new Date().toLocaleDateString('fr-FR');
+  const row = {
+    id, nom,
+    gamme:          document.getElementById('fgam').value||'',
+    etape:          '1',
+    prix_est:       document.getElementById('fest').value||'',
+    prix_final:     document.getElementById('fpfin').value||'',
+    token,
+    email:          document.getElementById('feml').value||'',
+    tel:            document.getElementById('ftel').value||'',
+    conseiller:     document.getElementById('fcon').value||'',
+    tel_conseiller: document.getElementById('ftlc').value||'',
+    notes:          document.getElementById('fnot').value||'',
+    date1:today,date2:'',date3:'',date4:'',date5:'',date6:'',
+    signe:'false',sig_date:''
+  };
+  await sheetsWrite('append',{row});
+  _dos.unshift(row);
+  toast('✓ Dossier '+id+' créé !');
+  showTab('list');
+  renderListe();
+}
+
+// ============================================================
+// ADMIN — DÉTAIL
+// ============================================================
+let _curId = null;
+
+function openDetail(id) {
+  _curId = id;
+  document.getElementById('vListe').style.display = 'none';
+  document.getElementById('vDetail').style.display = 'block';
+  renderDetail();
+}
+
+function goListe() {
+  document.getElementById('vDetail').style.display = 'none';
+  document.getElementById('vListe').style.display = 'block';
+}
+
+function renderDetail() {
+  const d = _dos.find(x=>x.id===_curId); if(!d) return;
+  const e = parseInt(d.etape)||1;
+  const pct = Math.round(e/6*100);
+  const lien = location.origin+'/client/'+d.token;
+
+  const tl = STEPS.map((s,i)=>{
+    const n=i+1, st=n<e?'done':n===e?'current':'pending';
+    return `<div class="tli ${n<e?'done':''}">
+      <div class="tll"></div>
+      <div class="tld ${st}">${st==='done'?'✓':n}</div>
+      <div class="tlc">
+        <div style="font-size:13px;font-weight:700">${s.i} ${s.l}</div>
+        ${d['date'+n]?`<div style="font-size:11px;color:var(--mut)">${d['date'+n]}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const sbts = STEPS.map((s,i)=>
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${s.i} ${s.l}</button>`
+  ).join('');
+
+  document.getElementById('detailCont').innerHTML = `
+    <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div>
+        <div style="font-size:20px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="background:var(--g);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px">✓ Signé</span>':''}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">${d.id} · ${d.gamme||'—'}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">📞 ${d.tel||'—'} · ✉️ ${d.email||'—'}</div>
+        <div class="pb" style="width:260px"><div class="pf" style="width:${pct}%"></div></div>
+        <div style="font-size:12px;color:var(--mut)">Étape ${e}/6 — ${pct}%</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--mut)">Prix final</div>
+        <div style="font-size:22px;font-weight:800;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</div>
+        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'✓ Signé le '+d.sig_date:'⏳ En attente de signature'}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px" class="dcols">
+      <div>
+        <div class="ic"><div class="ict">Avancement</div><div class="atl">${tl}</div></div>
+      </div>
+      <div>
+        <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
+        <div class="ic">
+          <div class="ict">Infos</div>
+          <div class="ir"><span style="color:var(--mut)">Conseiller</span><span style="font-weight:600">${d.conseiller||'—'}</span></div>
+          <div class="ir"><span style="color:var(--mut)">Tél.</span><span style="font-weight:600">${d.tel_conseiller||'—'}</span></div>
+          <div class="ir"><span style="color:var(--mut)">Gamme</span><span style="font-weight:600">${d.gamme||'—'}</span></div>
+          <div class="ir"><span style="color:var(--mut)">Estimatif</span><span style="font-weight:600">${d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+' €':'—'}</span></div>
+          <div class="ir"><span style="color:var(--mut)">Prix final</span><span style="font-weight:600;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</span></div>
+          ${d.notes?`<div style="margin-top:8px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">📝 ${d.notes}</div>`:''}
+        </div>
+        <div class="ic">
+          <div class="ict">Lien client</div>
+          <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
+          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')">📋 Copier le lien</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function setEtape(n) {
+  const d = _dos.find(x=>x.id===_curId); if(!d) return;
+  d.etape = String(n);
+  if (!d['date'+n]) d['date'+n] = new Date().toLocaleDateString('fr-FR');
+  await sheetsWrite('update',{id:_curId,fields:{etape:d.etape,['date'+n]:d['date'+n]}});
+  renderDetail();
+  toast('✓ '+STEPS[n-1].l);
+}
+
+function copyLien(token) {
+  const lien = location.origin+'/client/'+token;
+  navigator.clipboard.writeText(lien).then(()=>toast('✓ Lien copié !'));
+}
+
+// ============================================================
+// CLIENT
+// ============================================================
+async function initClient(token) {
+  try {
+    const all = await sheetsGetAll();
+    const d = all.find(x=>x.token===token);
+    if (!d) {
+      document.getElementById('cliBody').innerHTML=`
+        <div style="text-align:center;padding:60px 20px">
+          <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+          <div style="font-size:16px;font-weight:700">Dossier introuvable</div>
+          <div style="font-size:13px;color:var(--mut);margin-top:8px">Contactez votre conseiller.</div>
+        </div>`;
+      return;
+    }
+    renderClient(d);
+  } catch(e) {
+    document.getElementById('cliBody').innerHTML=`
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+        <div style="font-size:16px;font-weight:700">Erreur de connexion</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:8px">${e.message}</div>
+        <button onclick="location.reload()" style="margin-top:16px;padding:9px 20px;background:var(--g);color:white;border:none;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer">↻ Réessayer</button>
+      </div>`;
+  }
+}
+
+function renderClient(d) {
+  const e=parseInt(d.etape)||1, pct=Math.round(e/6*100);
+  const prenom=(d.nom||'Client').split(' ')[0];
+  const cons=d.conseiller||'—';
+  const ini=cons.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'LM';
+
+  const tlPC=[...STEPS].reverse().map((s,ri)=>{
+    const i=5-ri,n=i+1;
+    const st=n<e?'cdone':n===e?'ccur':'cpend';
+    const ic=n<e?'done':n===e?'cur':'pend';
+    return `<div class="cst ${st}" style="animation-delay:${ri*.08}s">
+      <div class="cico ${ic}">${ic==='done'?'✓':s.i}</div>
+      <div class="clbl ${ic}">${s.l}${n===e?'<br><span class="cbadge">En cours</span>':''}</div>
+      ${d['date'+n]?`<div class="cdt">${d['date'+n]}</div>`:''}
+    </div>`;
+  }).join('');
+
+  const tlMob=[...STEPS].reverse().map((s,ri)=>{
+    const i=5-ri,n=i+1;
+    const st=n<e?'mdone':n===e?'mcur':'mpend';
+    const ic=n<e?'done':n===e?'cur':'pend';
+    return `<div class="mst ${st}" style="animation-delay:${ri*.08}s">
+      <div class="mln"></div>
+      <div class="mico ${ic}">${ic==='done'?'✓':s.i}</div>
+      <div class="mct">
+        <div class="mtt ${ic==='pend'?'pend':''}">${s.l}${n===e?'<span class="cbadge" style="margin-left:6px">En cours</span>':''}</div>
+        ${d['date'+n]?`<div class="mdt">${d['date'+n]}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const signBloc = e>=4?`
+    <div class="sc">
+      <div class="ict" style="margin-bottom:12px">Signature du devis</div>
+      ${d.signe==='true'
+        ?`<div class="ss s">✅ Devis signé électroniquement le ${d.sig_date}</div>`
+        :`<div class="ss u">⏳ Votre signature est attendue${d.prix_final?' pour le devis de <strong>'+parseInt(d.prix_final).toLocaleString('fr-FR')+' €</strong>':''}</div>
+        <div class="uz" onclick="document.getElementById('fpdf').click()">
+          <input type="file" id="fpdf" accept="application/pdf" style="display:none" onchange="onPdf(this.files[0])">
+          <div style="font-size:28px;margin-bottom:8px">📄</div>
+          <div style="font-size:13px;font-weight:600;color:#444">Charger le devis PDF</div>
+        </div>
+        <div id="pdfZone" style="display:none">
+          <div style="background:#525659;border-radius:6px;overflow:hidden;margin:12px 0">
+            <div style="background:#3d4043;padding:7px 12px;display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:6px;align-items:center">
+                <button onclick="pdfPrev()" style="background:#555;color:white;border:none;border-radius:3px;padding:3px 10px;cursor:pointer">‹</button>
+                <span id="pgInfo" style="color:#ccc;font-size:12px">1/1</span>
+                <button onclick="pdfNext()" style="background:#555;color:white;border:none;border-radius:3px;padding:3px 10px;cursor:pointer">›</button>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button onclick="pdfZm(-0.2)" style="background:#555;color:white;border:none;border-radius:3px;padding:3px 10px;cursor:pointer">−</button>
+                <span id="zmInfo" style="color:#ccc;font-size:12px;min-width:36px;text-align:center">130%</span>
+                <button onclick="pdfZm(.2)" style="background:#555;color:white;border:none;border-radius:3px;padding:3px 10px;cursor:pointer">+</button>
+              </div>
+            </div>
+            <div id="pdfWrap" onscroll="pdfScroll()" style="max-height:440px;overflow-y:auto;display:flex;justify-content:center;padding:12px">
+              <canvas id="pdfCv" style="max-width:100%;box-shadow:0 2px 10px rgba(0,0,0,.4)"></canvas>
+            </div>
+          </div>
+          <div id="scrollHint" style="display:none;align-items:center;gap:8px;padding:9px 12px;background:#fff8e1;border-radius:6px;font-size:12px;color:#e65100;font-weight:600;margin-bottom:10px">
+            ⬇ Parcourez jusqu'en bas pour signer
+          </div>
+          <div style="text-align:right;margin-bottom:14px">
+            <button class="btn btn-p" id="btnSign" onclick="showSig()" disabled>J'ai lu — Signer →</button>
+          </div>
+          <div id="sigZone" style="display:none">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:12px;color:var(--mut)">Tracez votre signature</span>
+              <button onclick="sigClr()" style="padding:5px 12px;border-radius:4px;border:1.5px solid var(--mid);background:white;font-size:12px;cursor:pointer">✏ Effacer</button>
+            </div>
+            <div id="sigWrap" style="border:2px dashed var(--mid);border-radius:6px;overflow:hidden;position:relative;background:white;cursor:crosshair;margin-bottom:10px">
+              <canvas id="sigCv" style="display:block;width:100%;height:130px;touch-action:none"></canvas>
+              <div id="sigPh" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#ccc;text-align:center;pointer-events:none;line-height:1.6">✍️<br>Tracez ici</div>
+            </div>
+            <div style="background:#f9f9f9;border-radius:6px;padding:9px 12px;font-size:12px;color:var(--mut);margin-bottom:12px">
+              📅 ${new Date().toLocaleDateString('fr-FR')} — En signant vous confirmez avoir lu et accepté le devis.
+            </div>
+            <button class="btn btn-p" id="btnVal" onclick="valider('${d.id}')" disabled style="width:100%">✅ Valider et télécharger le PDF signé</button>
+          </div>
+        </div>`
+      }
+    </div>`:''
+
+  document.getElementById('cliBody').innerHTML=`
+    <div class="wc">
+      <div class="wb"><div class="wt">Bonjour ${prenom} 👋</div><div class="ws">Suivi de votre projet · Dossier ${d.id}</div></div>
+      <div class="wbd">
+        <div class="cig">
+          <div class="cib"><div class="cibl">Gamme</div><div class="cibv" style="font-size:13px">${d.gamme||'—'}</div></div>
+          <div class="cib"><div class="cibl">Avancement</div><div class="cibv">${pct}%</div></div>
+          ${d.prix_final?`<div class="cib"><div class="cibl">Prix final</div><div class="cibv" style="color:var(--gd)">${parseInt(d.prix_final).toLocaleString('fr-FR')} €</div></div>`:''}
+          ${d.prix_est&&!d.prix_final?`<div class="cib"><div class="cibl">Estimatif</div><div class="cibv">${parseInt(d.prix_est).toLocaleString('fr-FR')} €</div></div>`:''}
+        </div>
+        <div class="stl">Étapes de votre projet</div>
+        <div class="only-pc"><div class="ctl-pc">${tlPC}</div></div>
+        <div class="only-mob"><div class="ctl-mob">${tlMob}</div></div>
+        ${signBloc}
+        <div class="stl" style="margin-top:20px">Votre interlocuteur</div>
+        <div class="cc">
+          <div class="cav">${ini}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${cons}</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:1px">Conseiller pose Leroy Merlin</div>
+            ${d.tel_conseiller?`<div style="font-size:13px;color:var(--g);font-weight:600;margin-top:4px">📞 ${d.tel_conseiller}</div>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// PDF + SIGNATURE
+// ============================================================
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let _pd=null,_pp=1,_pt=1,_ps=1.3,_pb=null,_pfn='devis.pdf',_scrolled=false;
+let _sc=null,_sx=null,_sd=false,_si=false;
+
+async function onPdf(f){
+  if(!f)return;
+  _pfn=f.name;
+  const ab=await f.arrayBuffer();
+  _pb=new Uint8Array(ab);
+  const t=pdfjsLib.getDocument({data:_pb.slice()});
+  _pd=await t.promise;
+  _pt=_pd.numPages;_pp=1;
+  _scrolled=_pt===1;
+  document.querySelector('.uz').style.display='none';
+  document.getElementById('pdfZone').style.display='block';
+  await pdfRen(_pp);
+  pdfUI();
+}
+
+async function pdfRen(n){
+  const pg=await _pd.getPage(n);
+  const vp=pg.getViewport({scale:_ps});
+  const cv=document.getElementById('pdfCv');
+  cv.width=vp.width;cv.height=vp.height;
+  await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+}
+
+function pdfUI(){
+  const i=document.getElementById('pgInfo');if(i)i.textContent=_pp+'/'+_pt;
+  const z=document.getElementById('zmInfo');if(z)z.textContent=Math.round(_ps*100)+'%';
+  const h=document.getElementById('scrollHint');
+  const b=document.getElementById('btnSign');
+  if(_scrolled){if(h)h.style.display='none';if(b)b.disabled=false;}
+  else{if(h)h.style.display='flex';if(b)b.disabled=true;}
+}
+
+async function pdfPrev(){if(_pp>1){_pp--;await pdfRen(_pp);pdfUI();}}
+async function pdfNext(){
+  if(_pp<_pt){_pp++;await pdfRen(_pp);}
+  if(_pp===_pt){_scrolled=true;}
+  pdfUI();
+}
+async function pdfZm(d){_ps=Math.min(Math.max(_ps+d,.5),3);await pdfRen(_pp);pdfUI();}
+function pdfScroll(){
+  if(_scrolled)return;
+  const w=document.getElementById('pdfWrap');
+  if(w&&w.scrollTop+w.clientHeight>=w.scrollHeight-10&&_pp===_pt){_scrolled=true;pdfUI();}
+}
+
+function showSig(){
+  document.getElementById('sigZone').style.display='block';
+  document.getElementById('btnSign').style.display='none';
+  setTimeout(initSig,100);
+}
+
+function initSig(){
+  _sc=document.getElementById('sigCv');
+  _sx=_sc.getContext('2d');
+  const w=(document.getElementById('sigWrap')?.clientWidth||500)*2;
+  _sc.width=w;_sc.height=260;_sc.style.height='130px';
+  _sx.strokeStyle='#1a1a1a';_sx.lineWidth=3;_sx.lineCap='round';_sx.lineJoin='round';
+  _sd=false;_si=false;
+  const xy=e=>{
+    const r=_sc.getBoundingClientRect(),sx=_sc.width/r.width,sy=_sc.height/r.height;
+    if(e.touches)return{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sy};
+    return{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sy};
+  };
+  _sc.onmousedown=e=>{_sd=true;const p=xy(e);_sx.beginPath();_sx.moveTo(p.x,p.y);};
+  _sc.onmousemove=e=>{if(!_sd)return;const p=xy(e);_sx.lineTo(p.x,p.y);_sx.stroke();markSig();};
+  _sc.onmouseup=()=>_sd=false;_sc.onmouseleave=()=>_sd=false;
+  _sc.ontouchstart=e=>{e.preventDefault();_sd=true;const p=xy(e);_sx.beginPath();_sx.moveTo(p.x,p.y);};
+  _sc.ontouchmove=e=>{e.preventDefault();if(!_sd)return;const p=xy(e);_sx.lineTo(p.x,p.y);_sx.stroke();markSig();};
+  _sc.ontouchend=()=>_sd=false;
+}
+
+function markSig(){
+  if(_si)return;_si=true;
+  document.getElementById('sigPh').style.display='none';
+  document.getElementById('btnVal').disabled=false;
+}
+
+function sigClr(){
+  if(_sx&&_sc)_sx.clearRect(0,0,_sc.width,_sc.height);
+  _si=false;
+  document.getElementById('sigPh').style.display='block';
+  document.getElementById('btnVal').disabled=true;
+}
+
+async function valider(dosId){
+  const btn=document.getElementById('btnVal');
+  btn.textContent='Génération...';btn.disabled=true;
+  try{
+    const du=_sc.toDataURL('image/png');
+    const ab=await(await(await fetch(du)).blob()).arrayBuffer();
+    const{PDFDocument,rgb,StandardFonts}=PDFLib;
+    const doc=await PDFDocument.load(_pb.buffer.slice(0));
+    const pages=doc.getPages();
+    const last=pages[pages.length-1];
+    const{width}=last.getSize();
+    const font=await doc.embedFont(StandardFonts.Helvetica);
+    const img=await doc.embedPng(ab);
+    const bw=230,bh=85,bx=width-bw-24,by=20;
+    last.drawRectangle({x:bx-8,y:by-8,width:bw+16,height:bh+16,borderColor:rgb(.47,.75,.13),borderWidth:1,color:rgb(.97,1,.95)});
+    last.drawLine({start:{x:bx-8,y:by+bh+8},end:{x:bx+bw+8,y:by+bh+8},thickness:.5,color:rgb(.47,.75,.13)});
+    last.drawText('Lu et approuvé — Signature électronique',{x:bx-6,y:by+bh+12,size:7,font,color:rgb(.35,.57,.09)});
+    const now=new Date();
+    const ds=now.toLocaleDateString('fr-FR')+' '+String(now.getHours()).padStart(2,'0')+'h'+String(now.getMinutes()).padStart(2,'0');
+    last.drawText('Signé le : '+ds,{x:bx,y:by+10,size:8,font,color:rgb(.3,.3,.3)});
+    const dims=img.scaleToFit(bw,bh-20);
+    last.drawImage(img,{x:bx+(bw-dims.width)/2,y:by+18,width:dims.width,height:dims.height});
+    const out=await doc.save();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([out],{type:'application/pdf'}));
+    a.download=_pfn.replace(/\.pdf$/i,'')+'_signé.pdf';a.click();
+    await sheetsWrite('update',{id:dosId,fields:{signe:'true',sig_date:ds}});
+    document.getElementById('sigZone').innerHTML=`
+      <div style="background:var(--gl);border:1px solid var(--g);border-radius:8px;padding:16px 20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">✅</div>
+        <div style="font-weight:700;font-size:15px;color:var(--gd)">Devis signé et téléchargé !</div>
+        <div style="font-size:13px;color:var(--gd);margin-top:4px">Signé le ${ds}</div>
+      </div>`;
+  }catch(err){
+    btn.textContent='✅ Valider';btn.disabled=false;
+    alert('Erreur : '+err.message);
+  }
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ============================================================
+// DÉMARRAGE
+// ============================================================
+window.onload = init;
 </script>
 </body>
 </html>
