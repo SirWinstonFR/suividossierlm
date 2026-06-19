@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi Pose — Admin · Leroy Merlin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
+:root{--green:#78BE20;--gd:#5a9118;--gl:#e8f5d0;--gx:#f4fae8;--black:#1a1a1a;--gray:#f5f5f5;--mid:#e0e0e0;--muted:#666}
+.btn{padding:7px 16px;border-radius:4px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--green);color:white}.btn-primary:hover{background:var(--gd)}
+.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:white}.btn-outline:hover{border-color:var(--green);color:var(--green)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-dark{background:var(--black);color:white}.btn-dark:hover{background:#333}
+.btn-danger{background:#e53935;color:white}.btn-danger:hover{background:#c62828}
+.header{background:var(--black);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-triangle{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid var(--green)}
+.logo-text{color:white;font-size:14px;font-weight:700;letter-spacing:.5px;line-height:1.2}
+.logo-sub{font-size:10px;color:var(--green);font-weight:400;letter-spacing:1px;text-transform:uppercase}
+.page{padding:24px;max-width:1100px;margin:0 auto}
+.page-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--mid)}
+.tab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.active{color:var(--green);border-bottom-color:var(--green)}
+.dossiers-grid{display:flex;flex-direction:column;gap:10px}
+.dossier-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .15s;gap:16px}
+.dossier-card:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(120,190,32,.12)}
+.dossier-info{flex:1;min-width:0}
+.dossier-nom{font-size:15px;font-weight:700}
+.dossier-meta{font-size:12px;color:var(--muted);margin-top:2px}
+.step-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.step-1{background:#fff3e0;color:#e65100}.step-2{background:#e3f2fd;color:#1565c0}
+.step-3{background:#f3e5f5;color:#6a1b9a}.step-4{background:#fce4ec;color:#880e4f}
+.step-5{background:#e8f5d0;color:#3a7008}.step-6{background:var(--green);color:white}
+.dossier-prix{font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap}
+.dossier-actions{display:flex;gap:6px}
+.form-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:24px;margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+label{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{padding:9px 12px;border:1.5px solid var(--mid);border-radius:5px;font-size:14px;font-family:inherit;transition:border-color .15s;background:white;color:var(--black)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+textarea{resize:vertical;min-height:72px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.detail-header{background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.detail-nom{font-size:20px;font-weight:700}
+.detail-meta{font-size:13px;color:var(--muted);margin-top:4px}
+.detail-cols{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.info-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-bottom:12px}
+.info-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--muted)}.info-value{font-weight:600}
+.admin-tl{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;align-items:flex-start;position:relative}
+.tl-item:not(:last-child) .tl-line{position:absolute;left:11px;top:26px;width:2px;bottom:-10px;background:var(--mid)}
+.tl-item.done:not(:last-child) .tl-line{background:var(--green)}
+.tl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;position:relative;z-index:1}
+.tl-dot.done{background:var(--green);color:white}.tl-dot.current{background:var(--gl);border:2px solid var(--green);color:var(--gd)}.tl-dot.pending{background:white;border:2px solid var(--mid);color:#bbb}
+.tl-content{flex:1;padding-bottom:20px}.tl-title{font-size:13px;font-weight:700}.tl-date{font-size:11px;color:var(--muted);margin-top:2px}
+.step-selector{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.step-btn{width:100%;text-align:left;padding:8px 12px;border-radius:5px;border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;background:var(--gray);color:var(--black);transition:all .15s}
+.step-btn:hover{background:var(--gl);border-color:var(--green);color:var(--gd)}.step-btn.selected{background:var(--green);color:white;border-color:var(--green)}
+.progress-bar{height:6px;background:var(--mid);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .5s}
+.badge-signe{background:var(--green);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px}
+.loading-bar{height:3px;background:var(--green);animation:slide 1.5s infinite;display:none;position:fixed;top:0;left:0;right:0;z-index:999}
+@keyframes slide{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:white;padding:12px 20px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--black)}
+.login-card{background:white;border-radius:12px;padding:40px 36px;width:340px;text-align:center}
+.login-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+.login-triangle{width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:34px solid var(--green)}
+.login-title{font-size:20px;font-weight:800;color:var(--black);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.login-error{color:#e53935;font-size:13px;margin-top:10px;min-height:18px}
+@media(max-width:680px){.detail-cols{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="loading-bar" id="loading-bar"></div>
+
+<!-- LOGIN -->
+<div id="view-login" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo"><div class="login-triangle"></div><div style="font-size:18px;font-weight:800;color:var(--black)">LEROY MERLIN</div></div>
+    <div class="login-title">Interface Admin</div>
+    <div class="login-sub">Suivi dossiers de pose</div>
+    <input type="password" id="login-pwd" placeholder="Mot de passe" style="width:100%;margin-bottom:10px">
+    <button class="btn btn-primary" style="width:100%" onclick="login()">Connexion</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="view-admin" style="display:none">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-triangle"></div>
+      <div class="logo-text">LEROY MERLIN<br><span class="logo-sub">Suivi pose — Admin</span></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-primary" onclick="showTab('nouveau')">+ Nouveau dossier</button>
+      <button class="btn btn-outline btn-sm" onclick="loadDossiers()">↻ Actualiser</button>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- LISTE -->
+  <div id="view-liste">
+    <div class="page">
+      <div class="page-title">Dossiers de pose</div>
+      <div class="page-sub">Gérez vos clients et partagez-leur leur lien de suivi personnalisé.</div>
+      <div class="tab-bar">
+        <button class="tab active" onclick="filterTab('tous',this)">Tous</button>
+        <button class="tab" onclick="filterTab('en-cours',this)">En cours</button>
+        <button class="tab" onclick="filterTab('termine',this)">Terminés</button>
+      </div>
+      <div id="liste-dossiers" class="dossiers-grid"></div>
+
+      <!-- FORMULAIRE -->
+      <div id="form-nouveau" style="display:none;margin-top:20px">
+        <div class="form-card">
+          <div style="font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="color:var(--green)">▶</span> Nouveau dossier client</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Nom du client</label><input id="f-nom" type="text" placeholder="Jean Dupont"></div>
+            <div class="form-group"><label>Gamme choisie</label><input id="f-gamme" type="text" placeholder="Parquet chêne clair"></div>
+            <div class="form-group"><label>Téléphone client</label><input id="f-tel" type="text" placeholder="06 xx xx xx xx"></div>
+            <div class="form-group"><label>Email client</label><input id="f-email" type="email" placeholder="client@exemple.fr"></div>
+            <div class="form-group"><label>Conseiller</label><input id="f-conseiller" type="text" placeholder="Sophie Leclerc"></div>
+            <div class="form-group"><label>Tél. conseiller</label><input id="f-telc" type="text" placeholder="03 xx xx xx xx"></div>
+            <div class="form-group"><label>Devis estimatif (€)</label><input id="f-prix-est" type="number" placeholder="2800"></div>
+            <div class="form-group"><label>Prix final (€)</label><input id="f-prix-final" type="number" placeholder="3100"></div>
+            <div class="form-group full"><label>Notes</label><textarea id="f-notes" placeholder="Informations complémentaires..."></textarea></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-outline btn-dark" onclick="showTab('liste')">Annuler</button>
+            <button class="btn btn-primary" onclick="creerDossier()">Créer le dossier</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÉTAIL -->
+  <div id="view-detail" style="display:none">
+    <div class="page">
+      <button style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:16px;background:none;border:none;padding:0" onclick="document.getElementById('view-detail').style.display='none';document.getElementById('view-liste').style.display='block'">← Retour à la liste</button>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
