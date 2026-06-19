@@ -1,21 +1,9 @@
 [[redirects]]
   from = "/client/*"
-<<<<<<< HEAD
   to = "/index.html"
-=======
-  to = "/client.html"
->>>>>>> parent of 6106c46 (V3)
   status = 200
 
 [[redirects]]
   from = "/admin"
-<<<<<<< HEAD
-=======
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/*"
->>>>>>> parent of 6106c46 (V3)
   to = "/index.html"
   status = 200

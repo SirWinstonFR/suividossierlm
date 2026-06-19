@@ -1,8 +1,2 @@
-<<<<<<< HEAD
 /client/*    /index.html    200
 /admin       /index.html    200
-=======
-/client/*  /client.html  200
-/admin     /index.html   200
-/*         /index.html   200
->>>>>>> parent of 6106c46 (V3)
