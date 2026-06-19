@@ -1,14 +1,6 @@
 // ============================================================
 // admin.js — Interface Admin
 // ============================================================
-const STEPS = [
-  { l:'Démarche lancée',       i:'🚀' },
-  { l:'Rendez-vous planifié',  i:'📅' },
-  { l:'Retour technicien',     i:'📐' },
-  { l:'Devis final envoyé',    i:'📋' },
-  { l:'Commande confirmée',    i:'✅' },
-  { l:'Pose effectuée',        i:'🏠' },
-];
 
 let _dossiers = [], _curId = null;
 
@@ -16,47 +8,45 @@ let _dossiers = [], _curId = null;
 function doLogin() {
   if (document.getElementById('lpwd').value === CFG.ADMIN_PWD) {
     sessionStorage.setItem('lm_auth','ok');
-    showView('admin');
+    showView('vAdmin');
     loadAll();
   } else {
     document.getElementById('lerr').textContent = 'Mot de passe incorrect.';
   }
 }
-function doLogout() { sessionStorage.removeItem('lm_auth'); showView('login'); }
+function doLogout() {
+  sessionStorage.removeItem('lm_auth');
+  showView('vLogin');
+}
 
 // CHARGEMENT
 async function loadAll() {
-  loading(true);
+  document.getElementById('lbar').style.display = 'block';
   try { _dossiers = await sheetsGetAll(); }
-  catch(e) { showToast('Erreur connexion Sheets : ' + e.message); _dossiers = []; }
-  loading(false);
+  catch(e) { showToast('Erreur : ' + e.message); _dossiers = []; }
+  document.getElementById('lbar').style.display = 'none';
   renderListe();
-}
-
-function loading(v) {
-  const el = document.getElementById('lbar');
-  if (el) el.style.display = v ? 'block' : 'none';
 }
 
 // LISTE
 function renderListe(f) {
   let list = _dossiers;
-  if (f==='cours') list = _dossiers.filter(d => parseInt(d.etape) < 6);
-  if (f==='fin')   list = _dossiers.filter(d => parseInt(d.etape) === 6);
+  if (f==='cours') list = _dossiers.filter(d => parseInt(d.etape) < STEPS.length);
+  if (f==='fin')   list = _dossiers.filter(d => parseInt(d.etape) === STEPS.length);
   const cont = document.getElementById('listeDos');
-  if (!cont) return;
-  if (!list.length) { cont.innerHTML = '<div style="color:#aaa;padding:20px 0;font-size:14px">Aucun dossier.</div>'; return; }
+  if (!list.length) { cont.innerHTML='<div style="color:#aaa;padding:20px 0">Aucun dossier.</div>'; return; }
   cont.innerHTML = list.map(d => {
     const e = parseInt(d.etape)||1, s = STEPS[e-1];
     const prix = d.prix_final ? parseInt(d.prix_final).toLocaleString('fr-FR')+' €' : '—';
+    const signé = d.signe==='true' ? '<span style="color:var(--g);font-size:11px;margin-left:8px">✓ Signé</span>' : '';
     return `<div class="dos-card" onclick="openDetail('${d.id}')">
       <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="color:var(--g);font-size:11px;margin-left:8px;font-weight:700">✓ Signé</span>':''}</div>
+        <div style="font-size:15px;font-weight:700">${d.nom}${signé}</div>
         <div style="font-size:12px;color:var(--mut);margin-top:2px">${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
       </div>
-      <span class="sp sp${e}">${s.l}</span>
+      <span class="sp sp${Math.min(e,6)}">${s.l}</span>
       <div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>
-      <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+      <div onclick="event.stopPropagation()">
         <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')">🔗 Lien</button>
       </div>
     </div>`;
@@ -71,10 +61,10 @@ function filterTab(f,btn) {
 }
 function showTab(t) {
   document.getElementById('formNew').style.display = t==='new'?'block':'none';
-  if(t!=='new') renderListe();
+  if (t!=='new') renderListe();
 }
 
-// CRÉER
+// CRÉER DOSSIER
 async function creerDos() {
   const nom = document.getElementById('fnom').value.trim();
   if (!nom) { showToast('Nom requis.'); return; }
@@ -85,14 +75,17 @@ async function creerDos() {
     etape:          '1',
     prix_est:       document.getElementById('fest').value||'',
     prix_final:     document.getElementById('fpfin').value||'',
-    token, email:   document.getElementById('feml').value||'',
+    token,
+    email:          document.getElementById('feml').value||'',
     tel:            document.getElementById('ftel').value||'',
     conseiller:     document.getElementById('fcon').value||'',
     tel_conseiller: document.getElementById('ftlc').value||'',
     notes:          document.getElementById('fnot').value||'',
+    transporteur:   '',
     date1: new Date().toLocaleDateString('fr-FR'),
-    date2:'',date3:'',date4:'',date5:'',date6:'',
-    signe:'false', sig_date:''
+    date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
+    signe:'false', sig_date:'',
+    devis_url:'',
   };
   await sheetsWrite('append', { row });
   _dossiers.unshift(row);
@@ -113,9 +106,9 @@ function goListe() {
 }
 
 function renderDetail() {
-  const d = _dossiers.find(x=>x.id===_curId); if(!d) return;
-  const e = parseInt(d.etape)||1, pct = Math.round(e/6*100);
-  const lien = location.origin + '/client/' + d.token;
+  const d = _dossiers.find(x=>x.id===_curId); if (!d) return;
+  const e = parseInt(d.etape)||1, pct = Math.round(e/STEPS.length*100);
+  const lien = location.origin + CFG.BASE_PATH + '/client/' + d.token;
 
   const tl = STEPS.map((s,i) => {
     const n=i+1, st=n<e?'done':n===e?'current':'pending';
@@ -133,6 +126,33 @@ function renderDetail() {
     `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${s.i} ${s.l}</button>`
   ).join('');
 
+  // Upload PDF devis (étape 4+)
+  const pdfUploadBloc = `
+    <div class="ic">
+      <div class="ict">Devis PDF (à poster pour le client)</div>
+      ${d.devis_url
+        ? `<div style="background:var(--gl);border:1px solid var(--g);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--gd);margin-bottom:8px">
+            ✓ Devis en ligne — <a href="${d.devis_url}" target="_blank" style="color:var(--gd)">Voir le PDF</a>
+           </div>`
+        : '<div style="font-size:12px;color:var(--mut);margin-bottom:8px">Aucun devis uploadé pour l\'instant.</div>'
+      }
+      <div style="font-size:12px;color:var(--mut);background:#f9f9f9;padding:10px;border-radius:6px;line-height:1.6">
+        📌 Pour partager le devis : uploadez-le sur Google Drive, rendez-le public, et collez l'URL ci-dessous.
+      </div>
+      <input id="devis-url-input" type="url" placeholder="https://drive.google.com/file/..." value="${d.devis_url||''}" style="margin-top:8px;width:100%">
+      <button class="btn btn-p btn-sm" style="margin-top:8px;width:100%" onclick="saveDevisUrl('${d.id}')">💾 Enregistrer le lien PDF</button>
+    </div>`;
+
+  // Infos livraison (étape 7)
+  const livraisonBloc = `
+    <div class="ic">
+      <div class="ict">Infos livraison</div>
+      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label>
+        <input id="transp-input" placeholder="ex: Chronopost, DHL..." value="${d.transporteur||''}">
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">💾 Enregistrer</button>
+    </div>`;
+
   document.getElementById('detailCont').innerHTML = `
     <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
       <div>
@@ -142,12 +162,12 @@ function renderDetail() {
         <div style="height:6px;background:var(--mid);border-radius:3px;overflow:hidden;width:260px;margin:10px 0 4px">
           <div style="height:100%;background:var(--g);border-radius:3px;width:${pct}%"></div>
         </div>
-        <div style="font-size:12px;color:var(--mut)">Étape ${e}/6 — ${pct}%</div>
+        <div style="font-size:12px;color:var(--mut)">Étape ${e}/${STEPS.length} — ${pct}%</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:11px;color:var(--mut)">Prix final</div>
         <div style="font-size:22px;font-weight:800;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</div>
-        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'✓ Signé le '+d.sig_date:'⏳ En attente de signature'}</div>
+        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'✓ Bon de commande signé le '+d.sig_date:'⏳ En attente de signature'}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
@@ -156,6 +176,8 @@ function renderDetail() {
       </div>
       <div>
         <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
+        ${pdfUploadBloc}
+        ${livraisonBloc}
         <div class="ic">
           <div class="ict">Informations</div>
           <div class="ir"><span style="color:var(--mut)">Conseiller</span><span style="font-weight:600">${d.conseiller||'—'}</span></div>
@@ -175,7 +197,7 @@ function renderDetail() {
 }
 
 async function setEtape(n) {
-  const d = _dossiers.find(x=>x.id===_curId); if(!d) return;
+  const d = _dossiers.find(x=>x.id===_curId); if (!d) return;
   d.etape = String(n);
   if (!d['date'+n]) d['date'+n] = new Date().toLocaleDateString('fr-FR');
   await sheetsWrite('update', { id:_curId, fields:{ etape:d.etape, ['date'+n]:d['date'+n] } });
@@ -183,7 +205,25 @@ async function setEtape(n) {
   showToast('✓ ' + STEPS[n-1].l);
 }
 
+async function saveDevisUrl(id) {
+  const url = document.getElementById('devis-url-input').value.trim();
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  d.devis_url = url;
+  await sheetsWrite('update', { id, fields:{ devis_url: url } });
+  showToast('✓ Lien PDF enregistré !');
+  renderDetail();
+}
+
+async function saveTransporteur(id) {
+  const val = document.getElementById('transp-input').value.trim();
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  d.transporteur = val;
+  await sheetsWrite('update', { id, fields:{ transporteur: val } });
+  showToast('✓ Transporteur enregistré !');
+  renderDetail();
+}
+
 function copyLien(token) {
-  const lien = location.origin + '/client/' + token;
+  const lien = location.origin + CFG.BASE_PATH + '/client/' + token;
   navigator.clipboard.writeText(lien).then(() => showToast('✓ Lien copié !'));
 }

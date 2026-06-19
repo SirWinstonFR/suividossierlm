@@ -1,27 +1,28 @@
 // ============================================================
-// main.js — Routeur principal compatible GitHub Pages
+// main.js — Routeur principal
 // ============================================================
 
 function showView(v) {
-  document.getElementById('vLogin').style.display  = v==='login'  ? 'block':'none';
-  document.getElementById('vAdmin').style.display  = v==='admin'  ? 'block':'none';
-  document.getElementById('vClient').style.display = v==='client' ? 'block':'none';
+  ['vLogin','vAdmin','vClient'].forEach(id => {
+    document.getElementById(id).style.display = id===v ? 'block' : 'none';
+  });
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  if(!t) return;
+  if (!t) return;
   t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3000);
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// Récupère le token depuis l'URL ou le sessionStorage
 function getToken() {
-  // Méthode 1 : chemin réel /client/TOKEN (Netlify)
+  // 1. Chemin URL : /suividossierlm/client/TOKEN
   const parts = location.pathname.split('/').filter(Boolean);
   const idx = parts.indexOf('client');
   if (idx !== -1 && parts[idx+1]) return parts[idx+1];
 
-  // Méthode 2 : redirection GitHub Pages via sessionStorage
+  // 2. Redirection GitHub Pages via 404.html
   const redirect = sessionStorage.getItem('gh_redirect');
   if (redirect) {
     sessionStorage.removeItem('gh_redirect');
@@ -30,22 +31,24 @@ function getToken() {
     if (ridx !== -1 && rparts[ridx+1]) return rparts[ridx+1];
   }
 
-  // Méthode 3 : ?token=TOKEN
-  return new URLSearchParams(location.search).get('token');
+  // 3. Token persistant (rechargement de page)
+  return sessionStorage.getItem('cli_token') || null;
 }
 
 window.onload = function() {
   const token = getToken();
   if (token) {
-    showView('client');
+    // Persiste le token pour les rechargements
+    sessionStorage.setItem('cli_token', token);
+    showView('vClient');
     initClient(token);
-  } else if (sessionStorage.getItem('lm_auth')==='ok') {
-    showView('admin');
+  } else if (sessionStorage.getItem('lm_auth') === 'ok') {
+    showView('vAdmin');
     loadAll();
   } else {
-    showView('login');
+    showView('vLogin');
     document.getElementById('lpwd')?.addEventListener('keydown', e => {
-      if (e.key==='Enter') doLogin();
+      if (e.key === 'Enter') doLogin();
     });
   }
 };
