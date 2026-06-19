@@ -1,5 +1,5 @@
 // ============================================================
-// main.js — Routeur principal + utilitaires partagés
+// main.js — Routeur principal compatible GitHub Pages
 // ============================================================
 
 function showView(v) {
@@ -15,14 +15,30 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'), 3000);
 }
 
-function isClientRoute() {
-  return location.pathname.includes('/client/');
+function getToken() {
+  // Méthode 1 : chemin réel /client/TOKEN (Netlify)
+  const parts = location.pathname.split('/').filter(Boolean);
+  const idx = parts.indexOf('client');
+  if (idx !== -1 && parts[idx+1]) return parts[idx+1];
+
+  // Méthode 2 : redirection GitHub Pages via sessionStorage
+  const redirect = sessionStorage.getItem('gh_redirect');
+  if (redirect) {
+    sessionStorage.removeItem('gh_redirect');
+    const rparts = redirect.split('/').filter(Boolean);
+    const ridx = rparts.indexOf('client');
+    if (ridx !== -1 && rparts[ridx+1]) return rparts[ridx+1];
+  }
+
+  // Méthode 3 : ?token=TOKEN
+  return new URLSearchParams(location.search).get('token');
 }
 
 window.onload = function() {
-  if (isClientRoute()) {
+  const token = getToken();
+  if (token) {
     showView('client');
-    initClient();
+    initClient(token);
   } else if (sessionStorage.getItem('lm_auth')==='ok') {
     showView('admin');
     loadAll();

@@ -10,10 +10,7 @@ const STEPS_C = [
   { l:'Pose effectuée',        i:'🏠' },
 ];
 
-async function initClient() {
-  const parts = location.pathname.split('/').filter(Boolean);
-  const idx   = parts.indexOf('client');
-  const token = idx !== -1 ? parts[idx+1] : null;
+async function initClient(token) {
 
   if (!token) {
     cliError('Lien invalide', 'Ce lien de suivi est incorrect.<br>Contactez votre conseiller.');
