@@ -91,7 +91,6 @@ async function creerDos() {
     tel:            document.getElementById('ftel').value||'',
     conseiller:     document.getElementById('fcon').value||'',
     tel_conseiller: document.getElementById('ftlc').value||'',
-    notes:          document.getElementById('fnot').value||'',
     transporteur:   '',
     promo:          document.getElementById('fpromo').value||'',
     ecoptz_url:     '',
