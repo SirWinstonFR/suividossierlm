@@ -105,8 +105,11 @@ function renderClient(d) {
         <div class="trow-track"><div class="trow-fill" style="width:${row1Fill}%"></div></div>
         ${row1Html}
       </div>
-      <div class="tconnect">
-        <div class="tconnect-track"><div class="tconnect-fill" style="height:${connectFill}%"></div></div>
+      <div class="tconnect-wrap">
+        <div class="tconnect">
+          <div class="tconnect-track"></div>
+          <div class="tconnect-fill" style="height:${connectFill}%"></div>
+        </div>
       </div>
       <div class="trow trow-rev">
         <div class="trow-track"><div class="trow-fill trow-fill-rev" style="width:${row2Fill}%"></div></div>
