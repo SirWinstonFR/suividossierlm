@@ -91,6 +91,7 @@ async function creerDos() {
     tel:            document.getElementById('ftel').value||'',
     conseiller:     document.getElementById('fcon').value||'',
     tel_conseiller: document.getElementById('ftlc').value||'',
+    notes:          document.getElementById('fnot').value||'',
     transporteur:   '',
     promo:          document.getElementById('fpromo').value||'',
     ecoptz_url:     '',
@@ -100,7 +101,7 @@ async function creerDos() {
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
-    predevis_url:'', devis_url:'',
+    predevis_url:'', devis_url:'', commande_url:'',
   };
   await sheetsWrite('append', { row });
   _dossiers.unshift(row);
@@ -154,6 +155,8 @@ function renderDetail() {
       <div class="ict">Documents à transmettre</div>
       <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Bon de commande à signer (Drive)</label><input id="commande-url" type="url" placeholder="https://drive.google.com/file/d/.../view" value="${d.commande_url||''}"></div>
+      <div style="font-size:11px;color:var(--mut);margin:-4px 0 8px">⚠️ Le fichier Drive doit être partagé en "Lecture pour toute personne disposant du lien"</div>
       <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
       ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
     </div>`;
@@ -286,8 +289,9 @@ async function saveDocs(id) {
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
   const pre = document.getElementById('predevis-url').value.trim();
   const dev = document.getElementById('devis-url').value.trim();
-  d.predevis_url = pre; d.devis_url = dev;
-  await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev } });
+  const cmd = document.getElementById('commande-url').value.trim();
+  d.predevis_url = pre; d.devis_url = dev; d.commande_url = cmd;
+  await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev, commande_url:cmd } });
   showToast('✓ Documents enregistrés');
   renderDetail();
 }

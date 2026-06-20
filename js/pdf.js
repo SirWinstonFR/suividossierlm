@@ -19,6 +19,26 @@ async function pdfLoad(file) {
   pdfUpdateUI();
 }
 
+// Charge un PDF directement depuis une URL (ex: lien Drive fourni par le conseiller)
+async function pdfLoadFromUrl(url, fileName) {
+  // Convertit un lien de partage Drive classique en lien de téléchargement direct
+  const directUrl = toDriveDirectDownload(url);
+  const res = await fetch(directUrl);
+  if (!res.ok) throw new Error('Impossible de charger le document (statut ' + res.status + ')');
+  const blob = await res.blob();
+  const file = new File([blob], fileName || 'document.pdf', { type: 'application/pdf' });
+  await pdfLoad(file);
+}
+
+function toDriveDirectDownload(url) {
+  // Transforme https://drive.google.com/file/d/XXXX/view?... en lien de téléchargement direct
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+  }
+  return url; // pas un lien Drive reconnu, on tente tel quel
+}
+
 async function pdfRender(n) {
   const page = await _pdfDoc.getPage(n);
   // Rendu haute résolution pour un meilleur rendu (moins "aplati")

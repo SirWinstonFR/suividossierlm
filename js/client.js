@@ -67,32 +67,51 @@ function renderClient(d) {
   const hasPrixEvo = d.prix_est && d.prix_final && d.prix_est !== d.prix_final;
   const stepDesc = STEPS[e-1]?.desc || '';
 
-  // === TIMELINE — grille JS pure, 4 colonnes x 2 lignes, connecteur en serpentin via bordures ===
+  // === TIMELINE — grille JS pure, animée : pulse + progression segment par segment ===
   const half = Math.ceil(STEPS.length/2);
   const row1 = STEPS.slice(0, half);
   const row2 = STEPS.slice(half).reverse();
 
-  function buildNode(s, n) {
+  function buildNode(s, n, delayIdx) {
     const st = n<e ? 'done' : n===e ? 'cur' : 'pend';
-    return `<div class="tnode">
+    return `<div class="tnode" style="--d:${delayIdx*70}ms">
       <div class="tdot ${st}">${st==='done' ? icon('check',16) : icon(s.ic,16)}</div>
       <div class="tlbl ${st}">${s.l}</div>
       ${n===e?'<div class="tbadge">En cours</div>':''}
     </div>`;
   }
 
-  const row1Html = row1.map((s,i) => buildNode(s, i+1)).join('');
-  const row2Html = row2.map((s,i) => buildNode(s, STEPS.length-i)).join('');
-  const row1Done = half <= e;
-  const row2HasProgress = e > half;
+  const row1Html = row1.map((s,i) => buildNode(s, i+1, i)).join('');
+  const row2Html = row2.map((s,i) => buildNode(s, STEPS.length-i, half+i)).join('');
+
+  // Calcul du pourcentage de remplissage de chaque segment de ligne
+  // Ligne 1 : segments entre les 4 premiers points (3 segments)
+  const seg1Count = row1.length - 1;
+  let row1Fill = 0;
+  if (e > 1) row1Fill = Math.min((e - 1) / seg1Count, 1) * 100;
+  if (e > half) row1Fill = 100;
+
+  // Connecteur vertical (coude) : rempli si on a dépassé la ligne 1 entière
+  const connectFill = e > half ? 100 : 0;
+
+  // Ligne 2 : segments entre les 4 derniers points (3 segments), remplissage de droite à gauche
+  const seg2Count = row2.length - 1;
+  let row2Fill = 0;
+  if (e > half) row2Fill = Math.min((e - half) / seg2Count, 1) * 100;
 
   const timelineHtml = `
     <div class="timeline-v3">
-      <div class="trow ${row1Done?'trow-done':''}">${row1Html}</div>
-      <div class="tconnect ${row1Done?'tconnect-done':''}">
-        <div class="tconnect-line"></div>
+      <div class="trow">
+        <div class="trow-track"><div class="trow-fill" style="width:${row1Fill}%"></div></div>
+        ${row1Html}
       </div>
-      <div class="trow trow-rev ${row2HasProgress?'trow-active':''}">${row2Html}</div>
+      <div class="tconnect">
+        <div class="tconnect-track"><div class="tconnect-fill" style="height:${connectFill}%"></div></div>
+      </div>
+      <div class="trow trow-rev">
+        <div class="trow-track"><div class="trow-fill trow-fill-rev" style="width:${row2Fill}%"></div></div>
+        ${row2Html}
+      </div>
     </div>`;
 
   // === PASTILLES DOCUMENTS ===
@@ -164,21 +183,18 @@ function renderClient(d) {
       </button>
     </div>` : '';
 
-  // === SIGNATURE — bon de commande (affiché à l'étape 5, ou rappel si déjà signé) ===
+  // === SIGNATURE — bon de commande (chargé automatiquement, posté par le conseiller) ===
   const dejaSigne = d.signe === 'true';
+  const commandeDispo = !!d.commande_url;
   const signBloc = (e === 5 || dejaSigne) ? `
     <div class="sc">
       <div class="ict">Bon de commande</div>
       ${dejaSigne
         ? `<div class="ss signed">${icon('check',18)} Bon de commande signé le ${d.sig_date}</div>`
+        : !commandeDispo
+        ? `<div class="ss unsigned">${icon('clock',18)} Votre conseiller prépare votre bon de commande, il sera disponible ici très prochainement.</div>`
         : `<div class="ss unsigned">${icon('clock',18)} Signature attendue${d.prix_final?' pour <strong>'+parseInt(d.prix_final).toLocaleString('fr-FR')+' €</strong>':''}</div>
-          <div class="upload-intro">Chargez votre bon de commande PDF :</div>
-          <div class="upload-zone" onclick="document.getElementById('fpdf').click()">
-            <input type="file" id="fpdf" accept="application/pdf" style="display:none" onchange="onPdfSelected(this.files[0])">
-            ${icon('upload',26)}
-            <div class="upload-title">Charger le bon de commande</div>
-            <div class="upload-sub">Le fichier reste sur votre appareil</div>
-          </div>
+          <div class="upload-intro">Votre conseiller a préparé votre bon de commande :</div>
           <div id="pdf-viewer-zone" style="display:none">
             <div class="pdf-frame">
               <div class="pdf-toolbar">
@@ -220,6 +236,10 @@ function renderClient(d) {
                 ${icon('check')} Valider et télécharger le document signé
               </button>
             </div>
+          </div>
+          <div id="pdf-loading" class="upload-zone" style="cursor:default">
+            ${icon('loader',26)}
+            <div class="upload-title">Chargement de votre document...</div>
           </div>`
       }
     </div>` : '';
@@ -313,6 +333,11 @@ function renderClient(d) {
   if (d.plu_concerne === 'true' && d.plu_adresse) {
     loadMiniMap(d.plu_adresse);
   }
+
+  // Charge automatiquement le bon de commande si l'étape le requiert
+  if (e === 5 && !dejaSigne && commandeDispo) {
+    autoLoadCommandePdf(d.commande_url);
+  }
 }
 
 function openLink(url) { window.open(url, '_blank'); }
@@ -325,11 +350,19 @@ async function loadMiniMap(adresse) {
     src="https://www.google.com/maps?q=${q}&output=embed"></iframe>`;
 }
 
-function onPdfSelected(file) {
-  if (!file) return;
-  document.querySelector('.upload-zone').style.display='none';
-  document.getElementById('pdf-viewer-zone').style.display='block';
-  pdfLoad(file);
+async function autoLoadCommandePdf(url) {
+  const loadingEl = document.getElementById('pdf-loading');
+  const viewerEl  = document.getElementById('pdf-viewer-zone');
+  try {
+    await pdfLoadFromUrl(url, 'bon_de_commande.pdf');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (viewerEl)  viewerEl.style.display = 'block';
+  } catch(e) {
+    if (loadingEl) loadingEl.innerHTML = `
+      <div style="color:#d23c3c">${icon('alert',24)}</div>
+      <div class="upload-title" style="color:#d23c3c">Impossible de charger le document</div>
+      <div class="upload-sub">${e.message} — contactez votre conseiller</div>`;
+  }
 }
 function showSignZone() {
   document.getElementById('sign-zone').style.display='block';
