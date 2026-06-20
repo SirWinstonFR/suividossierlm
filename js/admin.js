@@ -103,6 +103,7 @@ async function creerDos() {
     drive_url:      '',
     fiche_url:      document.getElementById('ffiche-link')?.value || '',
     delai_fab_semaines: '',
+    message_client: '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
@@ -213,6 +214,17 @@ function renderDetail() {
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés ici.</div>
     </div>`;
 
+  // Message personnalisé du conseiller, visible par le client
+  const messageBloc = `
+    <div class="ic">
+      <div class="ict">Message pour le client</div>
+      <div class="fg" style="margin-bottom:8px">
+        <textarea id="message-client" placeholder="Ex: Bonjour, votre commande avance bien, n'hésitez pas à me contacter si besoin." style="min-height:70px">${d.message_client||''}</textarea>
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveMessageClient('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Ce message s'affiche directement sur la page de suivi du client.</div>
+    </div>`;
+
   const techBloc = `
     <div class="ic">
       <div class="ict">Détails techniques</div>
@@ -285,6 +297,7 @@ function renderDetail() {
       <div>
         <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
         ${dateFields}
+        ${messageBloc}
         ${docsBloc}
         ${driveBloc}
         ${techBloc}
@@ -304,7 +317,9 @@ function renderDetail() {
         <div class="ic">
           <div class="ict">Lien client</div>
           <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
-          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
+          <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
+          <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Envoyer l'email de suivi</button>
+          ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
         </div>
       </div>
     </div>`;
@@ -329,6 +344,15 @@ async function setEtape(n) {
   await sheetsWrite('update', { id:_curId, fields:{ etape:d.etape, ['date'+n]:d['date'+n] } });
   renderDetail();
   showToast('✓ ' + STEPS[n-1].l);
+}
+
+async function saveMessageClient(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const val = document.getElementById('message-client').value.trim();
+  d.message_client = val;
+  await sheetsWrite('update', { id, fields:{ message_client: val } });
+  showToast('✓ Message enregistré');
+  renderDetail();
 }
 
 async function saveDates(id) {
@@ -408,6 +432,16 @@ async function saveTransporteur(id) {
   await sheetsWrite('update', { id, fields:{ transporteur: val } });
   showToast('✓ Transporteur enregistré');
   renderDetail();
+}
+
+async function sendStatusEmail(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  if (!d.email) { showToast("Aucun email renseigné pour ce client"); return; }
+  const e = parseInt(d.etape)||1;
+  const etapeLabel = STEPS[e-1]?.l || '';
+  const lienSuivi = location.origin + CFG.BASE_PATH + '/client/' + d.token;
+  await sheetsWrite('sendStatusEmail', { id, etapeLabel, lienSuivi });
+  showToast('✓ Email envoyé à ' + d.email);
 }
 
 function copyLien(token) {

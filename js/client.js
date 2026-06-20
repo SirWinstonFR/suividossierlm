@@ -123,9 +123,9 @@ function renderClient(d) {
     const active = !!d[doc.key] && e >= doc.minStep;
     const url = d[doc.key];
     return `<div class="dpill ${active?'active':'todo'}" ${url?`onclick="openLink('${url}')"`:''}>
-      ${icon(doc.ic,18)}
+      <div class="dpill-ic">${icon(doc.ic,18)}</div>
       <span>${doc.l}</span>
-      ${active?`<span class="dpill-check">${icon('check',12)}</span>`:''}
+      ${active?`<span class="dpill-check">${icon('check',10)}</span>`:''}
     </div>`;
   }).join('');
 
@@ -143,14 +143,29 @@ function renderClient(d) {
     : null;
 
   const projetBloc = projetRows.length ? `
-    <div class="sc">
+    <div class="sc project-card">
       <div class="ict">Détails de votre projet</div>
-      ${projetRows.map(([l,v]) => `<div class="ir"><span class="ir-l">${l}</span><span class="ir-v">${v}</span></div>`).join('')}
-      ${d.fiche_url ? `<button class="btn btn-o" style="border-color:var(--mid);color:var(--mut);margin-top:12px;width:100%" onclick="openLink('${d.fiche_url}')">${icon('filetext',14)} Voir la fiche technique</button>` : ''}
+      <div class="project-rows">
+        ${projetRows.map(([l,v]) => `<div class="ir"><span class="ir-l">${l}</span><span class="ir-v">${v}</span></div>`).join('')}
+      </div>
+      ${d.fiche_url ? `<button class="fiche-btn" onclick="openLink('${d.fiche_url}')">
+        <span class="fiche-btn-ic">${icon('filetext',16)}</span>
+        <span class="fiche-btn-text">
+          <span class="fiche-btn-title">Fiche technique</span>
+          <span class="fiche-btn-sub">Caractéristiques détaillées du produit</span>
+        </span>
+        <span class="fiche-btn-arrow">${icon('arrowright',15)}</span>
+      </button>` : ''}
       ${catEntry && (catEntry.plus || catEntry.moins) ? `
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-          ${catEntry.plus ? `<div style="font-size:12px;color:var(--gd)"><strong>+</strong> ${catEntry.plus.split('\n').join(' · ')}</div>` : ''}
-          ${catEntry.moins ? `<div style="font-size:12px;color:#a05a00"><strong>−</strong> ${catEntry.moins.split('\n').join(' · ')}</div>` : ''}
+        <div class="plusmoins-grid">
+          ${catEntry.plus ? `<div class="pm-box pm-plus">
+            <div class="pm-label">${icon('discount',13)} Points forts</div>
+            ${catEntry.plus.split('\n').filter(Boolean).map(p => `<div class="pm-item">${p}</div>`).join('')}
+          </div>` : ''}
+          ${catEntry.moins ? `<div class="pm-box pm-moins">
+            <div class="pm-label">${icon('alert',13)} À noter</div>
+            ${catEntry.moins.split('\n').filter(Boolean).map(m => `<div class="pm-item">${m}</div>`).join('')}
+          </div>` : ''}
         </div>` : ''}
     </div>` : '';
 
@@ -324,6 +339,14 @@ function renderClient(d) {
           </div></div>`:''}
 
         ${stepDesc?`<div class="step-banner">${icon(STEPS[e-1].ic,16)} ${stepDesc}</div>`:''}
+
+        ${d.message_client ? `<div class="conseiller-msg">
+          <div class="conseiller-msg-ic">${ini}</div>
+          <div class="conseiller-msg-body">
+            <div class="conseiller-msg-from">${cons} vous écrit</div>
+            <div class="conseiller-msg-text">${d.message_client}</div>
+          </div>
+        </div>` : ''}
 
         <div class="stl">Étapes de votre projet</div>
         ${timelineHtml}
