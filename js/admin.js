@@ -19,6 +19,8 @@ async function loadAll() {
   document.getElementById('lbar').style.display = 'block';
   try { _dossiers = await sheetsGetAll(); }
   catch(e) { showToast('Erreur : ' + e.message); _dossiers = []; }
+  await loadCatalogue();
+  populateGammeSelect();
   document.getElementById('lbar').style.display = 'none';
   renderListe();
 }
@@ -55,6 +57,7 @@ function filterTab(f,btn) {
 }
 function showTab(t) {
   document.getElementById('formNew').style.display = t==='new'?'block':'none';
+  if (t==='new') populateGammeSelect();
   if (t!=='new') renderListe();
 }
 
@@ -80,8 +83,8 @@ async function creerDos() {
   const token = genToken();
   const row = {
     id, nom,
-    gamme:          document.getElementById('fgam').value||'',
-    modele:         document.getElementById('fmod').value||'',
+    gamme:          getSelectedGammeLabel(),
+    modele:         getSelectedModeleLabel(),
     artisan:        document.getElementById('fart').value||'',
     etape:          '1',
     prix_est:       document.getElementById('fest').value||'',
@@ -98,6 +101,8 @@ async function creerDos() {
     plu_concerne:   'false',
     plu_adresse:    '',
     drive_url:      '',
+    fiche_url:      document.getElementById('ffiche-link')?.value || '',
+    delai_fab_semaines: '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
@@ -123,6 +128,18 @@ async function createDriveFolderFor(id, nom) {
       if (fresh && d) d.drive_url = fresh.drive_url;
     } catch(e) { /* silencieux */ }
   }, 2500);
+}
+
+async function openCatalogueView() {
+  document.getElementById('vListe').style.display = 'none';
+  document.getElementById('vDetail').style.display = 'none';
+  document.getElementById('vCatalogue').style.display = 'block';
+  await loadCatalogue();
+  renderCatalogueView();
+}
+function closeCatalogueView() {
+  document.getElementById('vCatalogue').style.display = 'none';
+  document.getElementById('vListe').style.display = 'block';
 }
 
 function openDetail(id) {
@@ -204,6 +221,19 @@ function renderDetail() {
       <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 
+  // Délai de fabrication — saisi en semaines, date estimée calculée automatiquement
+  const delaiBloc = `
+    <div class="ic">
+      <div class="ict">Délai de fabrication</div>
+      <div class="fg" style="margin-bottom:8px">
+        <label>Durée (en semaines)</label>
+        <input id="delai-semaines" type="number" min="0" placeholder="ex: 6" value="${d.delai_fab_semaines||''}">
+      </div>
+      ${d.date6 && d.delai_fab_semaines ? `<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">${icon('calendar',13)} Livraison estimée : ${computeDateEstimee(d.date6, d.delai_fab_semaines)}</div>` : ''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDelai('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Calculé à partir de la date de confirmation de commande.</div>
+    </div>`;
+
   // Promo / éco-PTZ — éco-PTZ ajoutable ici, plus tard dans le parcours (pas à la création)
   const avantagesBloc = `
     <div class="ic">
@@ -258,6 +288,7 @@ function renderDetail() {
         ${docsBloc}
         ${driveBloc}
         ${techBloc}
+        ${delaiBloc}
         ${avantagesBloc}
         ${pluBloc}
         ${transpBloc}
@@ -319,6 +350,23 @@ async function saveDocs(id) {
   d.predevis_url = pre; d.devis_url = dev; d.commande_url = cmd;
   await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev, commande_url:cmd } });
   showToast('✓ Documents enregistrés');
+  renderDetail();
+}
+
+function computeDateEstimee(dateConfirmation, semaines) {
+  const [j,m,a] = dateConfirmation.split('/');
+  if (!j||!m||!a) return '—';
+  const d = new Date(parseInt(a), parseInt(m)-1, parseInt(j));
+  d.setDate(d.getDate() + parseInt(semaines)*7);
+  return d.toLocaleDateString('fr-FR');
+}
+
+async function saveDelai(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const val = document.getElementById('delai-semaines').value.trim();
+  d.delai_fab_semaines = val;
+  await sheetsWrite('update', { id, fields:{ delai_fab_semaines: val } });
+  showToast('✓ Délai enregistré');
   renderDetail();
 }
 

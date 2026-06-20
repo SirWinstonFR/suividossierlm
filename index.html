@@ -217,6 +217,7 @@ textarea{resize:vertical;min-height:72px}
     <div class="logo"><div class="tri"></div><div class="logo-t">LEROY MERLIN<br><span class="logo-s">Admin · Suivi pose</span></div></div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-p btn-sm" onclick="showTab('new')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau</button>
+      <button class="btn btn-o btn-sm" onclick="openCatalogueView()">Catalogue</button>
       <button class="btn btn-o btn-sm" onclick="loadAll()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button class="btn btn-o btn-sm" onclick="doLogout()">Déconnexion</button>
     </div>
@@ -241,8 +242,31 @@ textarea{resize:vertical;min-height:72px}
               <div id="fid-msg" style="font-size:11px;min-height:14px"></div>
             </div>
             <div class="fg"><label>Nom client</label><input id="fnom" placeholder="Jean Dupont"></div>
-            <div class="fg"><label>Gamme</label><input id="fgam" placeholder="Parquet chêne"></div>
-            <div class="fg"><label>Modèle détaillé</label><input id="fmod" placeholder="Chêne massif 14mm premium"></div>
+            <div class="fg">
+              <label>Gamme</label>
+              <select id="fgam-select" onchange="onGammeChange()" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px">
+                <option value="">— Choisir —</option>
+              </select>
+            </div>
+            <div class="fg" id="fsousgamme-wrap" style="display:none">
+              <label>Sous-gamme</label>
+              <select id="fsousgamme-select" onchange="onSousGammeChange()" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px"></select>
+            </div>
+            <div class="fg" id="ffabricant-wrap" style="display:none">
+              <label>Fabricant</label>
+              <select id="ffabricant-select" onchange="onFabricantChange()" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px"></select>
+            </div>
+            <div class="fg" id="fmodele-wrap" style="display:none">
+              <label>Modèle</label>
+              <select id="fmodele-select" onchange="onModeleChange()" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px"></select>
+            </div>
+            <div class="fg" id="ffiche-wrap" style="display:none;grid-column:1/-1">
+              <button class="btn btn-o" type="button" style="border-color:var(--mid);color:var(--mut);width:fit-content" onclick="openLink(document.getElementById('ffiche-link').value)">
+                ${typeof icon==='function'?icon('filetext',14):''} Voir la fiche technique
+              </button>
+              <input type="hidden" id="ffiche-link">
+              <div id="fplusmoins" style="margin-top:8px;font-size:12px;color:var(--mut)"></div>
+            </div>
             <div class="fg"><label>Artisan / Poseur</label><input id="fart" placeholder="Atelier Dubois"></div>
             <div class="fg"><label>Téléphone</label><input id="ftel" placeholder="06 xx xx xx xx"></div>
             <div class="fg"><label>Email</label><input id="feml" type="email" placeholder="client@mail.fr"></div>
@@ -267,6 +291,12 @@ textarea{resize:vertical;min-height:72px}
       <div id="detailCont"></div>
     </div>
   </div>
+  <div id="vCatalogue" style="display:none">
+    <div id="catalogueCont"></div>
+    <div class="page" style="padding-top:0">
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeCatalogueView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
+    </div>
+  </div>
 </div>
 
 <!-- CLIENT -->
@@ -287,6 +317,7 @@ textarea{resize:vertical;min-height:72px}
 <script src="js/config.js"></script>
 <script src="js/sheets.js"></script>
 <script src="js/pdf.js"></script>
+<script src="js/catalogue.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/client.js"></script>
 <script src="js/main.js"></script>

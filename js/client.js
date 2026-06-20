@@ -44,6 +44,7 @@ async function connecterClient() {
 }
 
 async function initClient(token) {
+  if (typeof loadCatalogue === 'function') await loadCatalogue();
   const savedId = sessionStorage.getItem('cli_dossier_id');
   if (savedId) {
     try { const d = await sheetsGetById(savedId); if (d) { renderClient(d); return; } }
@@ -136,10 +137,21 @@ function renderClient(d) {
   if (d.date3)   projetRows.push(['Retour technicien', d.date3]);
   if (d.date4)   projetRows.push(['Devis envoyé', d.date4]);
 
+  // Recherche l'entrée catalogue correspondante pour les + / - (si dispo)
+  const catEntry = (typeof _catalogue !== 'undefined' && d.modele)
+    ? _catalogue.find(c => d.modele.includes(c.modele) && c.modele)
+    : null;
+
   const projetBloc = projetRows.length ? `
     <div class="sc">
       <div class="ict">Détails de votre projet</div>
       ${projetRows.map(([l,v]) => `<div class="ir"><span class="ir-l">${l}</span><span class="ir-v">${v}</span></div>`).join('')}
+      ${d.fiche_url ? `<button class="btn btn-o" style="border-color:var(--mid);color:var(--mut);margin-top:12px;width:100%" onclick="openLink('${d.fiche_url}')">${icon('filetext',14)} Voir la fiche technique</button>` : ''}
+      ${catEntry && (catEntry.plus || catEntry.moins) ? `
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+          ${catEntry.plus ? `<div style="font-size:12px;color:var(--gd)"><strong>+</strong> ${catEntry.plus.split('\n').join(' · ')}</div>` : ''}
+          ${catEntry.moins ? `<div style="font-size:12px;color:#a05a00"><strong>−</strong> ${catEntry.moins.split('\n').join(' · ')}</div>` : ''}
+        </div>` : ''}
     </div>` : '';
 
   // === PROMO + ECO-PTZ ===
@@ -262,6 +274,20 @@ function renderClient(d) {
       }
     </div>` : '';
 
+  // === DÉLAI DE FABRICATION — visible dès la confirmation de commande ===
+  const delaiBloc = e >= 6 && d.delai_fab_semaines ? `
+    <div class="sc">
+      <div class="ict">Délai de fabrication</div>
+      <div class="livraison-box">
+        ${icon('clock',24)}
+        <div>
+          <div class="livraison-label">Durée estimée</div>
+          <div class="livraison-val">${d.delai_fab_semaines} semaine${d.delai_fab_semaines>1?'s':''}</div>
+          ${d.date6 ? `<div style="font-size:12px;color:var(--mut);margin-top:3px">Livraison estimée autour du ${computeDateEstimeeClient(d.date6, d.delai_fab_semaines)}</div>` : ''}
+        </div>
+      </div>
+    </div>` : '';
+
   // === LIVRAISON ===
   const livraisonBloc = e >= 7 && d.transporteur ? `
     <div class="sc">
@@ -311,6 +337,7 @@ function renderClient(d) {
         ${devisBloc}
         ${signBloc}
         ${poseDocBloc}
+        ${delaiBloc}
         ${livraisonBloc}
 
         <div class="stl" style="margin-top:22px">Votre interlocuteur</div>
@@ -343,6 +370,14 @@ function renderClient(d) {
 }
 
 function openLink(url) { window.open(url, '_blank'); }
+
+function computeDateEstimeeClient(dateConfirmation, semaines) {
+  const [j,m,a] = dateConfirmation.split('/');
+  if (!j||!m||!a) return '—';
+  const d = new Date(parseInt(a), parseInt(m)-1, parseInt(j));
+  d.setDate(d.getDate() + parseInt(semaines)*7);
+  return d.toLocaleDateString('fr-FR');
+}
 
 async function loadMiniMap(adresse) {
   const el = document.getElementById('plu-map');
