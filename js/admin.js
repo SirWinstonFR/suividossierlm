@@ -107,6 +107,22 @@ async function creerDos() {
   _dossiers.unshift(row);
   showToast('✓ Dossier '+id+' créé !');
   showTab('list');
+
+  // Création automatique du dossier Drive dédié, en arrière-plan
+  createDriveFolderFor(id, nom);
+}
+
+async function createDriveFolderFor(id, nom) {
+  await sheetsWrite('createFolder', { id, nom });
+  // Le dossier Drive est créé côté serveur ; on relit le Sheet après un délai
+  // pour récupérer l'URL et la refléter localement (utile si on rouvre la fiche)
+  setTimeout(async () => {
+    try {
+      const fresh = await sheetsGetById(id);
+      const d = _dossiers.find(x => x.id === id);
+      if (fresh && d) d.drive_url = fresh.drive_url;
+    } catch(e) { /* silencieux */ }
+  }, 2500);
 }
 
 function openDetail(id) {
@@ -161,13 +177,23 @@ function renderDetail() {
       ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
     </div>`;
 
-  // Lien Drive du client — préparé pour usage futur (rempli automatiquement à la 1ère signature, modifiable)
+  // Lien Drive du client — créé automatiquement à la création du dossier, verrouillé
   const driveBloc = `
     <div class="ic">
       <div class="ict">Espace Drive client</div>
-      <div class="fg" style="margin-bottom:8px"><label>Lien du dossier Drive</label><input id="drive-url" type="url" placeholder="Rempli automatiquement à la 1ère signature" value="${d.drive_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDrive('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés dans son dossier Drive personnel.</div>
+      ${d.drive_url
+        ? `<div class="drive-locked" onclick="window.open('${d.drive_url}','_blank')">
+             ${icon('link',15)}
+             <span class="drive-locked-text">${d.drive_url}</span>
+           </div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">${icon('check',11)} Dossier créé automatiquement — non modifiable</div>`
+        : `<div class="drive-locked drive-locked-pending">
+             ${icon('loader',15)}
+             <span class="drive-locked-text">Création du dossier en cours...</span>
+           </div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">Actualisez la page dans quelques secondes</div>`
+      }
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés ici.</div>
     </div>`;
 
   const techBloc = `
@@ -293,15 +319,6 @@ async function saveDocs(id) {
   d.predevis_url = pre; d.devis_url = dev; d.commande_url = cmd;
   await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev, commande_url:cmd } });
   showToast('✓ Documents enregistrés');
-  renderDetail();
-}
-
-async function saveDrive(id) {
-  const d = _dossiers.find(x=>x.id===id); if (!d) return;
-  const url = document.getElementById('drive-url').value.trim();
-  d.drive_url = url;
-  await sheetsWrite('update', { id, fields:{ drive_url:url } });
-  showToast('✓ Lien Drive enregistré');
   renderDetail();
 }
 
