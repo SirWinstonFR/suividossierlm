@@ -104,9 +104,10 @@ textarea{resize:vertical;min-height:72px}
 .tlbl{font-size:10px;font-weight:600;text-align:center;max-width:74px;line-height:1.3;word-break:break-word;transition:color .3s}
 .tlbl.done{color:var(--gd)}.tlbl.cur{color:var(--blk);font-weight:700}.tlbl.pend{color:var(--mut2)}
 .tbadge{font-size:8.5px;font-weight:700;background:var(--g);color:white;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.3px;margin-top:1px;animation:badgeIn .3s ease .4s backwards}
-.tconnect{height:46px;position:relative;display:flex;justify-content:flex-end;padding-right:6.25%}
-.tconnect-track{width:3px;height:100%;background:var(--mid);border-radius:2px;overflow:hidden;display:flex;align-items:flex-end}
-.tconnect-fill{width:100%;height:0;background:linear-gradient(180deg,var(--g),#8fd13a);border-radius:2px;transition:height 1s cubic-bezier(.22,.9,.3,1) .3s}
+.tconnect-wrap{position:relative;height:50px;margin:2px 0}
+.tconnect{position:absolute;right:12.5%;top:0;bottom:0;width:3px;transform:translateX(50%)}
+.tconnect-track{position:absolute;inset:0;background:var(--mid);border-radius:2px}
+.tconnect-fill{position:absolute;top:0;left:0;right:0;height:0;background:linear-gradient(180deg,var(--g),#8fd13a);border-radius:2px;transition:height 1s cubic-bezier(.22,.9,.3,1) .3s}
 @keyframes nodeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes badgeIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 @keyframes pulseRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.35);opacity:0}}
