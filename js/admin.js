@@ -318,7 +318,8 @@ function renderDetail() {
           <div class="ict">Lien client</div>
           <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
           <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
-          <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Envoyer l'email de suivi</button>
+          <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Préparer l'email de suivi</button>
+          ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre votre logiciel mail avec le message pré-rempli.</div>`:''}
           ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
         </div>
       </div>
@@ -434,14 +435,24 @@ async function saveTransporteur(id) {
   renderDetail();
 }
 
-async function sendStatusEmail(id) {
+function sendStatusEmail(id) {
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
   if (!d.email) { showToast("Aucun email renseigné pour ce client"); return; }
+
   const e = parseInt(d.etape)||1;
   const etapeLabel = STEPS[e-1]?.l || '';
   const lienSuivi = location.origin + CFG.BASE_PATH + '/client/' + d.token;
-  await sheetsWrite('sendStatusEmail', { id, etapeLabel, lienSuivi });
-  showToast('✓ Email envoyé à ' + d.email);
+  const prenom = (d.nom||'').split(' ')[0] || '';
+
+  const sujet = `Suivi de votre projet Leroy Merlin — ${etapeLabel}`;
+  let corps = `Bonjour ${prenom},\n\n`;
+  corps += `Votre projet vient de passer à l'étape : ${etapeLabel}.\n\n`;
+  if (d.message_client) corps += `${d.message_client}\n\n`;
+  corps += `Vous pouvez suivre l'avancement de votre projet à tout moment ici :\n${lienSuivi}\n\n`;
+  corps += `Cordialement,\n${d.conseiller || 'Votre conseiller Leroy Merlin'}`;
+
+  const mailtoUrl = `mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+  window.location.href = mailtoUrl;
 }
 
 function copyLien(token) {
