@@ -21,5 +21,5 @@ const STEPS = [
 const DOCS = [
   { key:'predevis_url', l:'Pré-devis', ic:'filetext', minStep:1 },
   { key:'devis_url',    l:'Devis',      ic:'filetext', minStep:4 },
-  { key:'sig_commande', l:'Commande signée', ic:'signature', minStep:5 },
+  { key:'commande_signee_url', l:'Commande signée', ic:'signature', minStep:5 },
 ];

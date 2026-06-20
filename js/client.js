@@ -116,9 +116,8 @@ function renderClient(d) {
 
   // === PASTILLES DOCUMENTS ===
   const docPills = DOCS.map(doc => {
-    let active = false, url = null;
-    if (doc.key === 'sig_commande') { active = d.signe==='true'; url = null; }
-    else { active = !!d[doc.key] && e >= doc.minStep; url = d[doc.key]; }
+    const active = !!d[doc.key] && e >= doc.minStep;
+    const url = d[doc.key];
     return `<div class="dpill ${active?'active':'todo'}" ${url?`onclick="openLink('${url}')"`:''}>
       ${icon(doc.ic,18)}
       <span>${doc.l}</span>
@@ -385,7 +384,7 @@ async function validerSignature(dosId) {
     await sheetsWrite('update',{id:dosId,fields:{signe:'true',sig_date:result.dateStr,sig_data:sigDataUrl}});
 
     btn.innerHTML = icon('loader',16) + ' Envoi vers votre espace...';
-    await sendPdfToDrive(dosId, result.bytes, result.fileName);
+    await sendPdfToDrive(dosId, result.bytes, result.fileName, 'commande');
 
     document.getElementById('sign-zone').innerHTML=`
       <div class="success-box">
@@ -399,11 +398,11 @@ async function validerSignature(dosId) {
   }
 }
 
-async function sendPdfToDrive(dosId, pdfBytes, fileName) {
+async function sendPdfToDrive(dosId, pdfBytes, fileName, docType) {
   try {
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const base64 = await blobToBase64(blob);
-    await sheetsWrite('uploadPdf', { id: dosId, fileName, base64Data: base64 });
+    await sheetsWrite('uploadPdf', { id: dosId, fileName, base64Data: base64, docType });
   } catch(e) { console.warn('Envoi Drive échoué :', e); }
 }
 
@@ -429,7 +428,7 @@ async function onPdfPoseSelected(file, dosId) {
     a.download = result.fileName; a.click();
     await sheetsWrite('update',{id:dosId,fields:{signe_pose:'true'}});
     showToast('Envoi vers votre espace...');
-    await sendPdfToDrive(dosId, result.bytes, result.fileName);
+    await sendPdfToDrive(dosId, result.bytes, result.fileName, 'pose');
     showToast('✓ Document de pose signé et transmis !');
     renderClient(await sheetsGetById(dosId));
   } catch(e) {

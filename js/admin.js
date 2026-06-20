@@ -101,7 +101,7 @@ async function creerDos() {
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
-    predevis_url:'', devis_url:'', commande_url:'',
+    predevis_url:'', devis_url:'', commande_url:'', commande_signee_url:'', pose_signee_url:'',
   };
   await sheetsWrite('append', { row });
   _dossiers.unshift(row);
