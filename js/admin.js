@@ -1,5 +1,5 @@
 // ============================================================
-// admin.js — Interface Admin
+// admin.js — Interface Admin v3 (icônes SVG inline)
 // ============================================================
 
 let _dossiers = [], _curId = null;
@@ -32,16 +32,16 @@ function renderListe(f) {
   cont.innerHTML = list.map(d => {
     const e = parseInt(d.etape)||1, s = STEPS[e-1];
     const prix = d.prix_final ? parseInt(d.prix_final).toLocaleString('fr-FR')+' €' : '—';
-    const signé = d.signe==='true' ? '<span style="color:var(--g);font-size:11px;margin-left:8px"><i class="ti ti-circle-check"></i> Signé</span>' : '';
+    const signé = d.signe==='true' ? `<span style="color:var(--g);font-size:11px;margin-left:8px">${icon('check',12)} Signé</span>` : '';
     return `<div class="dos-card" onclick="openDetail('${d.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:700">${d.nom}${signé}</div>
         <div style="font-size:12px;color:var(--mut);margin-top:2px">N° ${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
       </div>
-      <span class="sp sp${Math.min(e,6)}"><i class="ti ${s.i}" style="font-size:12px;margin-right:4px"></i>${s.l}</span>
+      <span class="sp sp${Math.min(e,6)}">${icon(s.ic,12)} ${s.l}</span>
       <div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>
       <div onclick="event.stopPropagation()">
-        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')"><i class="ti ti-link"></i> Lien</button>
+        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')">${icon('link',14)} Lien</button>
       </div>
     </div>`;
   }).join('');
@@ -58,7 +58,6 @@ function showTab(t) {
   if (t!=='new') renderListe();
 }
 
-// CRÉER — avec n° dossier saisi manuellement
 async function checkDosId() {
   const id = document.getElementById('fid').value.trim();
   const msgEl = document.getElementById('fid-msg');
@@ -68,6 +67,7 @@ async function checkDosId() {
   msgEl.style.color = available ? 'var(--gd)' : '#e53935';
 }
 
+// CRÉER — formulaire simplifié, sans éco-PTZ (réservé à plus tard, modifiable depuis le détail)
 async function creerDos() {
   const id  = document.getElementById('fid').value.trim();
   const nom = document.getElementById('fnom').value.trim();
@@ -94,12 +94,13 @@ async function creerDos() {
     notes:          document.getElementById('fnot').value||'',
     transporteur:   '',
     promo:          document.getElementById('fpromo').value||'',
-    ecoptz_url:     document.getElementById('fecoptz').value||'',
+    ecoptz_url:     '',
     plu_concerne:   'false',
     plu_adresse:    '',
+    drive_url:      '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
-    signe:'false', sig_date:'', sig_data:'',
+    signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
     predevis_url:'', devis_url:'',
   };
   await sheetsWrite('append', { row });
@@ -128,57 +129,62 @@ function renderDetail() {
     const n=i+1, st=n<e?'done':n===e?'current':'pending';
     return `<div class="tli ${n<e?'done':''}">
       <div class="tll"></div>
-      <div class="tld ${st}">${st==='done'?'<i class="ti ti-check"></i>':n}</div>
+      <div class="tld ${st}">${st==='done'?icon('check',12):n}</div>
       <div class="tlc">
-        <div style="font-size:13px;font-weight:700"><i class="ti ${s.i}" style="margin-right:6px;font-size:13px"></i>${s.l}</div>
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">${icon(s.ic,14)}${s.l}</div>
         ${d['date'+n]?`<div style="font-size:11px;color:var(--mut);margin-top:2px">${d['date'+n]}</div>`:''}
       </div>
     </div>`;
   }).join('');
 
   const sbts = STEPS.map((s,i) =>
-    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})"><i class="ti ${s.i}" style="margin-right:6px"></i>${s.l}</button>`
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${icon(s.ic,14)} ${s.l}</button>`
   ).join('');
 
-  // Dates clés modifiables
   const dateFields = `
     <div class="ic">
       <div class="ict">Dates clés</div>
       <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer les dates</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
     </div>`;
 
-  // Documents PDF (Drive)
   const docsBloc = `
     <div class="ic">
       <div class="ict">Documents à transmettre</div>
       <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer les liens</button>
-      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd)"><i class="ti ti-signature"></i> Signature client enregistrée — réutilisable</div>` : ''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
+      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
     </div>`;
 
-  // Artisan / modèle / gamme détaillé
+  // Lien Drive du client — préparé pour usage futur (rempli automatiquement à la 1ère signature, modifiable)
+  const driveBloc = `
+    <div class="ic">
+      <div class="ict">Espace Drive client</div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien du dossier Drive</label><input id="drive-url" type="url" placeholder="Rempli automatiquement à la 1ère signature" value="${d.drive_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDrive('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés dans son dossier Drive personnel.</div>
+    </div>`;
+
   const techBloc = `
     <div class="ic">
       <div class="ict">Détails techniques</div>
       <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 
-  // Promo / éco-PTZ
+  // Promo / éco-PTZ — éco-PTZ ajoutable ici, plus tard dans le parcours (pas à la création)
   const avantagesBloc = `
     <div class="ic">
       <div class="ict">Avantages client</div>
       <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://..." value="${d.ecoptz_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://... (à ajouter quand disponible)" value="${d.ecoptz_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 
-  // PLU / démarche administrative
   const pluBloc = `
     <div class="ic">
       <div class="ict">Démarche administrative (PLU)</div>
@@ -187,22 +193,22 @@ function renderDetail() {
         Projet soumis à déclaration / PLU
       </label>
       <div class="fg" style="margin-bottom:8px"><label>Adresse du projet</label><input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris" value="${d.plu_adresse||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 
   const transpBloc = `
     <div class="ic">
       <div class="ict">Livraison</div>
       <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 
   document.getElementById('detailCont').innerHTML = `
     <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
       <div>
-        <div style="font-size:20px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="background:var(--g);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px"><i class="ti ti-check"></i> Signé</span>':''}</div>
+        <div style="font-size:20px;font-weight:700">${d.nom}${d.signe==='true'?`<span style="background:var(--g);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px">${icon('check',11)} Signé</span>`:''}</div>
         <div style="font-size:13px;color:var(--mut);margin-top:4px">N° ${d.id} · ${d.gamme||'—'}</div>
-        <div style="font-size:13px;color:var(--mut);margin-top:4px"><i class="ti ti-phone"></i> ${d.tel||'—'} &nbsp;·&nbsp; <i class="ti ti-mail"></i> ${d.email||'—'}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">${icon('phone',13)} ${d.tel||'—'} &nbsp;·&nbsp; ${icon('mail',13)} ${d.email||'—'}</div>
         <div style="height:6px;background:var(--mid);border-radius:3px;overflow:hidden;width:260px;margin:10px 0 4px">
           <div style="height:100%;background:var(--g);border-radius:3px;width:${pct}%"></div>
         </div>
@@ -211,7 +217,7 @@ function renderDetail() {
       <div style="text-align:right">
         <div style="font-size:11px;color:var(--mut)">Prix final</div>
         <div style="font-size:22px;font-weight:800;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</div>
-        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'<i class="ti ti-check"></i> Signé le '+d.sig_date:'<i class="ti ti-clock"></i> En attente de signature'}</div>
+        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?icon('check',12)+' Signé le '+d.sig_date:icon('clock',12)+' En attente de signature'}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
@@ -222,6 +228,7 @@ function renderDetail() {
         <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
         ${dateFields}
         ${docsBloc}
+        ${driveBloc}
         ${techBloc}
         ${avantagesBloc}
         ${pluBloc}
@@ -238,7 +245,7 @@ function renderDetail() {
         <div class="ic">
           <div class="ict">Lien client</div>
           <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
-          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')"><i class="ti ti-copy"></i> Copier le lien client</button>
+          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
         </div>
       </div>
     </div>`;
@@ -283,6 +290,15 @@ async function saveDocs(id) {
   d.predevis_url = pre; d.devis_url = dev;
   await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev } });
   showToast('✓ Documents enregistrés');
+  renderDetail();
+}
+
+async function saveDrive(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const url = document.getElementById('drive-url').value.trim();
+  d.drive_url = url;
+  await sheetsWrite('update', { id, fields:{ drive_url:url } });
+  showToast('✓ Lien Drive enregistré');
   renderDetail();
 }
 
