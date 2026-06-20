@@ -8,12 +8,18 @@ const CFG = {
 };
 
 const STEPS = [
-  { l:'Démarche lancée',      i:'🚀', desc:'Votre projet a été enregistré.' },
-  { l:'Rendez-vous planifié', i:'📅', desc:'Un conseiller va vous contacter.' },
-  { l:'Retour technicien',    i:'📐', desc:'Visite technique effectuée.' },
-  { l:'Devis final envoyé',   i:'📋', desc:'Votre devis est disponible ci-dessous, prenez le temps de le consulter.' },
-  { l:'Commande signée',      i:'✍️', desc:'Signez votre bon de commande pour valider votre projet.' },
-  { l:'Commande confirmée',   i:'✅', desc:'Votre commande est confirmée et en cours de traitement.' },
-  { l:'Livraison',            i:'🚚', desc:'Vos matériaux sont en cours de livraison.' },
-  { l:'Pose effectuée',       i:'🏠', desc:'Votre projet est terminé, merci de votre confiance !' },
+  { l:'Démarche lancée',      i:'ti-rocket',        desc:'Votre projet a été enregistré.' },
+  { l:'RDV planifié',         i:'ti-calendar',      desc:'Un conseiller va vous contacter.' },
+  { l:'Retour technicien',    i:'ti-ruler-2',       desc:'Visite technique effectuée.' },
+  { l:'Devis envoyé',         i:'ti-file-text',     desc:'Votre devis est disponible ci-dessous.' },
+  { l:'Commande signée',      i:'ti-signature',     desc:'Signez votre bon de commande pour valider votre projet.' },
+  { l:'Commande confirmée',   i:'ti-circle-check',  desc:'Votre commande est confirmée et en cours de traitement.' },
+  { l:'Livraison',            i:'ti-truck-delivery',desc:'Vos matériaux sont en cours de livraison.' },
+  { l:'Pose effectuée',       i:'ti-home-check',    desc:'Votre projet est terminé, merci de votre confiance !' },
+];
+
+const DOCS = [
+  { key:'predevis_url', l:'Pré-devis', i:'ti-file-description', minStep:1 },
+  { key:'devis_url',    l:'Devis',      i:'ti-file-text',        minStep:4 },
+  { key:'sig_commande', l:'Commande signée', i:'ti-signature',  minStep:5 },
 ];

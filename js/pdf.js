@@ -1,11 +1,11 @@
 // ============================================================
-// pdf.js — Lecteur PDF + Signature canvas + Export PDF signé
+// pdf.js — Lecteur PDF + Signature canvas (look pro) + Export
 // ============================================================
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-let _pdfDoc=null,_pdfPage=1,_pdfTotal=1,_pdfScale=1.3,_pdfBytes=null,_pdfName='devis.pdf',_pdfScrolled=false;
-let _sigCanvas=null,_sigCtx=null,_sigDrawing=false,_sigDone=false;
+let _pdfDoc=null,_pdfPage=1,_pdfTotal=1,_pdfScale=1.4,_pdfBytes=null,_pdfName='document.pdf',_pdfScrolled=false;
+let _sigCanvas=null,_sigCtx=null,_sigDrawing=false,_sigDone=false,_sigDataUrl=null;
 
 async function pdfLoad(file) {
   _pdfName = file.name;
@@ -21,10 +21,17 @@ async function pdfLoad(file) {
 
 async function pdfRender(n) {
   const page = await _pdfDoc.getPage(n);
+  // Rendu haute résolution pour un meilleur rendu (moins "aplati")
+  const outputScale = window.devicePixelRatio || 1.5;
   const vp = page.getViewport({ scale: _pdfScale });
   const cv = document.getElementById('pdf-canvas');
-  cv.width = vp.width; cv.height = vp.height;
-  await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+  cv.width  = Math.floor(vp.width * outputScale);
+  cv.height = Math.floor(vp.height * outputScale);
+  cv.style.width  = Math.floor(vp.width) + 'px';
+  cv.style.height = Math.floor(vp.height) + 'px';
+  const ctx = cv.getContext('2d');
+  const transform = outputScale !== 1 ? [outputScale,0,0,outputScale,0,0] : null;
+  await page.render({ canvasContext: ctx, viewport: vp, transform }).promise;
 }
 
 function pdfUpdateUI() {
@@ -50,7 +57,7 @@ async function pdfNext() {
   pdfUpdateUI();
 }
 async function pdfZoom(d) {
-  _pdfScale = Math.min(Math.max(_pdfScale + d, 0.5), 3);
+  _pdfScale = Math.min(Math.max(_pdfScale + d, 0.6), 3);
   await pdfRender(_pdfPage);
   pdfUpdateUI();
 }
@@ -62,21 +69,29 @@ function pdfOnScroll() {
   }
 }
 
+// === SIGNATURE — version pro ===
 function sigInit() {
   _sigCanvas = document.getElementById('sig-canvas');
   _sigCtx = _sigCanvas.getContext('2d');
   const wrap = document.getElementById('sig-wrap');
-  _sigCanvas.width  = (wrap?.clientWidth || 500) * 2;
-  _sigCanvas.height = 260;
-  _sigCanvas.style.height = '130px';
-  _sigCtx.strokeStyle = '#1a1a1a'; _sigCtx.lineWidth = 3;
-  _sigCtx.lineCap = 'round'; _sigCtx.lineJoin = 'round';
+  const dpr = window.devicePixelRatio || 2;
+  const w = wrap?.clientWidth || 560;
+  const h = 170;
+  _sigCanvas.width  = w * dpr;
+  _sigCanvas.height = h * dpr;
+  _sigCanvas.style.width  = w + 'px';
+  _sigCanvas.style.height = h + 'px';
+  _sigCtx.scale(dpr, dpr);
+  _sigCtx.strokeStyle = '#1a1a1a';
+  _sigCtx.lineWidth = 2.4;
+  _sigCtx.lineCap = 'round';
+  _sigCtx.lineJoin = 'round';
   _sigDone = false;
+
   const xy = e => {
     const r = _sigCanvas.getBoundingClientRect();
-    const sx = _sigCanvas.width / r.width, sy = _sigCanvas.height / r.height;
-    if (e.touches) return { x: (e.touches[0].clientX - r.left) * sx, y: (e.touches[0].clientY - r.top) * sy };
-    return { x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy };
+    if (e.touches) return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   _sigCanvas.onmousedown  = e => { _sigDrawing = true; const p = xy(e); _sigCtx.beginPath(); _sigCtx.moveTo(p.x, p.y); };
   _sigCanvas.onmousemove  = e => { if (!_sigDrawing) return; const p = xy(e); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke(); sigMark(); };
@@ -96,7 +111,10 @@ function sigMark() {
 }
 
 function sigClear() {
-  if (_sigCtx && _sigCanvas) _sigCtx.clearRect(0, 0, _sigCanvas.width, _sigCanvas.height);
+  if (_sigCtx && _sigCanvas) {
+    const dpr = window.devicePixelRatio || 2;
+    _sigCtx.clearRect(0, 0, _sigCanvas.width/dpr, _sigCanvas.height/dpr);
+  }
   _sigDone = false;
   const ph = document.getElementById('sig-placeholder');
   if (ph) ph.style.display = 'block';
@@ -104,24 +122,34 @@ function sigClear() {
   if (btn) btn.disabled = true;
 }
 
-async function pdfGenSigned() {
-  if (!_sigDone) { showToast('Merci de tracer votre signature.'); return null; }
-  const du   = _sigCanvas.toDataURL('image/png');
-  const sigAB = await (await (await fetch(du)).blob()).arrayBuffer();
+// Stocke la signature de façon persistante pour réutilisation
+function sigGetDataUrl() {
+  return _sigCanvas.toDataURL('image/png');
+}
+
+async function pdfGenSigned(sigDataUrlOverride) {
+  const sigDataUrl = sigDataUrlOverride || (_sigDone ? sigGetDataUrl() : null);
+  if (!sigDataUrl) { showToast('Merci de tracer votre signature.'); return null; }
+
+  const sigAB = await (await (await fetch(sigDataUrl)).blob()).arrayBuffer();
   const { PDFDocument, rgb, StandardFonts } = PDFLib;
   const doc  = await PDFDocument.load(_pdfBytes.buffer.slice(0));
   const last = doc.getPages()[doc.getPages().length - 1];
   const { width } = last.getSize();
   const font = await doc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const img  = await doc.embedPng(sigAB);
-  const bw=230, bh=85, bx=width-bw-24, by=20;
+
+  const bw=240, bh=95, bx=width-bw-24, by=22;
   last.drawRectangle({ x:bx-8, y:by-8, width:bw+16, height:bh+16, borderColor:rgb(.47,.75,.13), borderWidth:1, color:rgb(.97,1,.95) });
   last.drawLine({ start:{x:bx-8,y:by+bh+8}, end:{x:bx+bw+8,y:by+bh+8}, thickness:.5, color:rgb(.47,.75,.13) });
-  last.drawText('Lu et approuvé — Signature électronique', { x:bx-6, y:by+bh+12, size:7, font, color:rgb(.35,.57,.09) });
+  last.drawText('Signature électronique', { x:bx-6, y:by+bh+12, size:8, font:fontBold, color:rgb(.21,.43,.05) });
+
   const now = new Date();
   const ds  = now.toLocaleDateString('fr-FR') + ' ' + String(now.getHours()).padStart(2,'0') + 'h' + String(now.getMinutes()).padStart(2,'0');
-  last.drawText('Signé le : ' + ds, { x:bx, y:by+10, size:8, font, color:rgb(.3,.3,.3) });
-  const dims = img.scaleToFit(bw, bh - 20);
-  last.drawImage(img, { x:bx+(bw-dims.width)/2, y:by+18, width:dims.width, height:dims.height });
+  last.drawText('Signé le : ' + ds, { x:bx, y:by+12, size:8, font, color:rgb(.3,.3,.3) });
+  const dims = img.scaleToFit(bw-10, bh-28);
+  last.drawImage(img, { x:bx+(bw-dims.width)/2, y:by+22, width:dims.width, height:dims.height });
+
   return { bytes: await doc.save(), dateStr: ds, fileName: _pdfName.replace(/\.pdf$/i,'') + '_signé.pdf' };
 }

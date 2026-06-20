@@ -4,7 +4,6 @@
 
 let _dossiers = [], _curId = null;
 
-// AUTH
 function doLogin() {
   if (document.getElementById('lpwd').value === CFG.ADMIN_PWD) {
     sessionStorage.setItem('lm_auth','ok');
@@ -14,12 +13,8 @@ function doLogin() {
     document.getElementById('lerr').textContent = 'Mot de passe incorrect.';
   }
 }
-function doLogout() {
-  sessionStorage.removeItem('lm_auth');
-  showView('vLogin');
-}
+function doLogout() { sessionStorage.removeItem('lm_auth'); showView('vLogin'); }
 
-// CHARGEMENT
 async function loadAll() {
   document.getElementById('lbar').style.display = 'block';
   try { _dossiers = await sheetsGetAll(); }
@@ -28,7 +23,6 @@ async function loadAll() {
   renderListe();
 }
 
-// LISTE
 function renderListe(f) {
   let list = _dossiers;
   if (f==='cours') list = _dossiers.filter(d => parseInt(d.etape) < STEPS.length);
@@ -38,16 +32,16 @@ function renderListe(f) {
   cont.innerHTML = list.map(d => {
     const e = parseInt(d.etape)||1, s = STEPS[e-1];
     const prix = d.prix_final ? parseInt(d.prix_final).toLocaleString('fr-FR')+' €' : '—';
-    const signé = d.signe==='true' ? '<span style="color:var(--g);font-size:11px;margin-left:8px">✓ Signé</span>' : '';
+    const signé = d.signe==='true' ? '<span style="color:var(--g);font-size:11px;margin-left:8px"><i class="ti ti-circle-check"></i> Signé</span>' : '';
     return `<div class="dos-card" onclick="openDetail('${d.id}')">
       <div style="flex:1;min-width:0">
         <div style="font-size:15px;font-weight:700">${d.nom}${signé}</div>
-        <div style="font-size:12px;color:var(--mut);margin-top:2px">${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:2px">N° ${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
       </div>
-      <span class="sp sp${Math.min(e,6)}">${s.l}</span>
+      <span class="sp sp${Math.min(e,6)}"><i class="ti ${s.i}" style="font-size:12px;margin-right:4px"></i>${s.l}</span>
       <div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>
       <div onclick="event.stopPropagation()">
-        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')">🔗 Lien</button>
+        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')"><i class="ti ti-link"></i> Lien</button>
       </div>
     </div>`;
   }).join('');
@@ -64,14 +58,31 @@ function showTab(t) {
   if (t!=='new') renderListe();
 }
 
-// CRÉER DOSSIER
+// CRÉER — avec n° dossier saisi manuellement
+async function checkDosId() {
+  const id = document.getElementById('fid').value.trim();
+  const msgEl = document.getElementById('fid-msg');
+  if (!id) { msgEl.textContent=''; return; }
+  const available = await checkIdAvailable(id);
+  msgEl.textContent = available ? '✓ Numéro disponible' : '✗ Ce numéro existe déjà';
+  msgEl.style.color = available ? 'var(--gd)' : '#e53935';
+}
+
 async function creerDos() {
+  const id  = document.getElementById('fid').value.trim();
   const nom = document.getElementById('fnom').value.trim();
+  if (!id)  { showToast('Numéro de dossier requis.'); return; }
   if (!nom) { showToast('Nom requis.'); return; }
-  const id = await nextId(), token = genToken();
+
+  const available = await checkIdAvailable(id);
+  if (!available) { showToast('Ce numéro de dossier existe déjà.'); return; }
+
+  const token = genToken();
   const row = {
     id, nom,
     gamme:          document.getElementById('fgam').value||'',
+    modele:         document.getElementById('fmod').value||'',
+    artisan:        document.getElementById('fart').value||'',
     etape:          '1',
     prix_est:       document.getElementById('fest').value||'',
     prix_final:     document.getElementById('fpfin').value||'',
@@ -82,10 +93,14 @@ async function creerDos() {
     tel_conseiller: document.getElementById('ftlc').value||'',
     notes:          document.getElementById('fnot').value||'',
     transporteur:   '',
+    promo:          document.getElementById('fpromo').value||'',
+    ecoptz_url:     document.getElementById('fecoptz').value||'',
+    plu_concerne:   'false',
+    plu_adresse:    '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
-    signe:'false', sig_date:'',
-    devis_url:'',
+    signe:'false', sig_date:'', sig_data:'',
+    predevis_url:'', devis_url:'',
   };
   await sheetsWrite('append', { row });
   _dossiers.unshift(row);
@@ -93,7 +108,6 @@ async function creerDos() {
   showTab('list');
 }
 
-// DÉTAIL
 function openDetail(id) {
   _curId = id;
   document.getElementById('vListe').style.display = 'none';
@@ -114,51 +128,81 @@ function renderDetail() {
     const n=i+1, st=n<e?'done':n===e?'current':'pending';
     return `<div class="tli ${n<e?'done':''}">
       <div class="tll"></div>
-      <div class="tld ${st}">${st==='done'?'✓':n}</div>
+      <div class="tld ${st}">${st==='done'?'<i class="ti ti-check"></i>':n}</div>
       <div class="tlc">
-        <div style="font-size:13px;font-weight:700">${s.i} ${s.l}</div>
+        <div style="font-size:13px;font-weight:700"><i class="ti ${s.i}" style="margin-right:6px;font-size:13px"></i>${s.l}</div>
         ${d['date'+n]?`<div style="font-size:11px;color:var(--mut);margin-top:2px">${d['date'+n]}</div>`:''}
       </div>
     </div>`;
   }).join('');
 
   const sbts = STEPS.map((s,i) =>
-    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${s.i} ${s.l}</button>`
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})"><i class="ti ${s.i}" style="margin-right:6px"></i>${s.l}</button>`
   ).join('');
 
-  // Upload PDF devis (étape 4+)
-  const pdfUploadBloc = `
+  // Dates clés modifiables
+  const dateFields = `
     <div class="ic">
-      <div class="ict">Devis PDF (à poster pour le client)</div>
-      ${d.devis_url
-        ? `<div style="background:var(--gl);border:1px solid var(--g);border-radius:6px;padding:10px 12px;font-size:12px;color:var(--gd);margin-bottom:8px">
-            ✓ Devis en ligne — <a href="${d.devis_url}" target="_blank" style="color:var(--gd)">Voir le PDF</a>
-           </div>`
-        : '<div style="font-size:12px;color:var(--mut);margin-bottom:8px">Aucun devis uploadé pour l\'instant.</div>'
-      }
-      <div style="font-size:12px;color:var(--mut);background:#f9f9f9;padding:10px;border-radius:6px;line-height:1.6">
-        📌 Pour partager le devis : uploadez-le sur Google Drive, rendez-le public, et collez l'URL ci-dessous.
-      </div>
-      <input id="devis-url-input" type="url" placeholder="https://drive.google.com/file/..." value="${d.devis_url||''}" style="margin-top:8px;width:100%">
-      <button class="btn btn-p btn-sm" style="margin-top:8px;width:100%" onclick="saveDevisUrl('${d.id}')">💾 Enregistrer le lien PDF</button>
+      <div class="ict">Dates clés</div>
+      <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer les dates</button>
     </div>`;
 
-  // Infos livraison (étape 7)
-  const livraisonBloc = `
+  // Documents PDF (Drive)
+  const docsBloc = `
     <div class="ic">
-      <div class="ict">Infos livraison</div>
-      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label>
-        <input id="transp-input" placeholder="ex: Chronopost, DHL..." value="${d.transporteur||''}">
-      </div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">💾 Enregistrer</button>
+      <div class="ict">Documents à transmettre</div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer les liens</button>
+      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd)"><i class="ti ti-signature"></i> Signature client enregistrée — réutilisable</div>` : ''}
+    </div>`;
+
+  // Artisan / modèle / gamme détaillé
+  const techBloc = `
+    <div class="ic">
+      <div class="ict">Détails techniques</div>
+      <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    </div>`;
+
+  // Promo / éco-PTZ
+  const avantagesBloc = `
+    <div class="ic">
+      <div class="ict">Avantages client</div>
+      <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://..." value="${d.ecoptz_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    </div>`;
+
+  // PLU / démarche administrative
+  const pluBloc = `
+    <div class="ic">
+      <div class="ict">Démarche administrative (PLU)</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="plu-check" ${d.plu_concerne==='true'?'checked':''} style="width:16px;height:16px">
+        Projet soumis à déclaration / PLU
+      </label>
+      <div class="fg" style="margin-bottom:8px"><label>Adresse du projet</label><input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris" value="${d.plu_adresse||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+    </div>`;
+
+  const transpBloc = `
+    <div class="ic">
+      <div class="ict">Livraison</div>
+      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')"><i class="ti ti-device-floppy"></i> Enregistrer</button>
     </div>`;
 
   document.getElementById('detailCont').innerHTML = `
     <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
       <div>
-        <div style="font-size:20px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="background:var(--g);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px">✓ Signé</span>':''}</div>
-        <div style="font-size:13px;color:var(--mut);margin-top:4px">${d.id} · ${d.gamme||'—'}</div>
-        <div style="font-size:13px;color:var(--mut);margin-top:4px">📞 ${d.tel||'—'} &nbsp;·&nbsp; ✉️ ${d.email||'—'}</div>
+        <div style="font-size:20px;font-weight:700">${d.nom}${d.signe==='true'?'<span style="background:var(--g);color:white;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px"><i class="ti ti-check"></i> Signé</span>':''}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">N° ${d.id} · ${d.gamme||'—'}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px"><i class="ti ti-phone"></i> ${d.tel||'—'} &nbsp;·&nbsp; <i class="ti ti-mail"></i> ${d.email||'—'}</div>
         <div style="height:6px;background:var(--mid);border-radius:3px;overflow:hidden;width:260px;margin:10px 0 4px">
           <div style="height:100%;background:var(--g);border-radius:3px;width:${pct}%"></div>
         </div>
@@ -167,7 +211,7 @@ function renderDetail() {
       <div style="text-align:right">
         <div style="font-size:11px;color:var(--mut)">Prix final</div>
         <div style="font-size:22px;font-weight:800;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</div>
-        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'✓ Bon de commande signé le '+d.sig_date:'⏳ En attente de signature'}</div>
+        <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?'<i class="ti ti-check"></i> Signé le '+d.sig_date:'<i class="ti ti-clock"></i> En attente de signature'}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
@@ -176,8 +220,12 @@ function renderDetail() {
       </div>
       <div>
         <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
-        ${pdfUploadBloc}
-        ${livraisonBloc}
+        ${dateFields}
+        ${docsBloc}
+        ${techBloc}
+        ${avantagesBloc}
+        ${pluBloc}
+        ${transpBloc}
         <div class="ic">
           <div class="ict">Informations</div>
           <div class="ir"><span style="color:var(--mut)">Conseiller</span><span style="font-weight:600">${d.conseiller||'—'}</span></div>
@@ -185,15 +233,27 @@ function renderDetail() {
           <div class="ir"><span style="color:var(--mut)">Gamme</span><span style="font-weight:600">${d.gamme||'—'}</span></div>
           <div class="ir"><span style="color:var(--mut)">Estimatif</span><span style="font-weight:600">${d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+' €':'—'}</span></div>
           <div class="ir"><span style="color:var(--mut)">Prix final</span><span style="font-weight:600;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</span></div>
-          ${d.notes?`<div style="margin-top:8px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">📝 ${d.notes}</div>`:''}
+          ${d.notes?`<div style="margin-top:8px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">${d.notes}</div>`:''}
         </div>
         <div class="ic">
           <div class="ict">Lien client</div>
           <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
-          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')">📋 Copier le lien client</button>
+          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}')"><i class="ti ti-copy"></i> Copier le lien client</button>
         </div>
       </div>
     </div>`;
+}
+
+function toISO(dateStr) {
+  if (!dateStr) return '';
+  const [j,m,a] = dateStr.split('/');
+  if (!j||!m||!a) return '';
+  return `${a}-${m.padStart(2,'0')}-${j.padStart(2,'0')}`;
+}
+function fromISO(iso) {
+  if (!iso) return '';
+  const [a,m,j] = iso.split('-');
+  return `${j}/${m}/${a}`;
 }
 
 async function setEtape(n) {
@@ -205,21 +265,64 @@ async function setEtape(n) {
   showToast('✓ ' + STEPS[n-1].l);
 }
 
-async function saveDevisUrl(id) {
-  const url = document.getElementById('devis-url-input').value.trim();
+async function saveDates(id) {
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
-  d.devis_url = url;
-  await sheetsWrite('update', { id, fields:{ devis_url: url } });
-  showToast('✓ Lien PDF enregistré !');
+  const f2 = fromISO(document.getElementById('date-2').value);
+  const f3 = fromISO(document.getElementById('date-3').value);
+  const f4 = fromISO(document.getElementById('date-4').value);
+  d.date2=f2; d.date3=f3; d.date4=f4;
+  await sheetsWrite('update', { id, fields:{ date2:f2, date3:f3, date4:f4 } });
+  showToast('✓ Dates enregistrées');
+  renderDetail();
+}
+
+async function saveDocs(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const pre = document.getElementById('predevis-url').value.trim();
+  const dev = document.getElementById('devis-url').value.trim();
+  d.predevis_url = pre; d.devis_url = dev;
+  await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev } });
+  showToast('✓ Documents enregistrés');
+  renderDetail();
+}
+
+async function saveTech(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const art = document.getElementById('tech-artisan').value.trim();
+  const mod = document.getElementById('tech-modele').value.trim();
+  d.artisan = art; d.modele = mod;
+  await sheetsWrite('update', { id, fields:{ artisan:art, modele:mod } });
+  showToast('✓ Détails techniques enregistrés');
+  renderDetail();
+}
+
+async function saveAvantages(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const promo = document.getElementById('adm-promo').value.trim();
+  const eco = document.getElementById('adm-ecoptz').value.trim();
+  d.promo = promo; d.ecoptz_url = eco;
+  await sheetsWrite('update', { id, fields:{ promo, ecoptz_url:eco } });
+  showToast('✓ Avantages enregistrés');
+  renderDetail();
+}
+
+async function savePlu(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const checked = document.getElementById('plu-check').checked;
+  const adresse = document.getElementById('plu-adresse').value.trim();
+  d.plu_concerne = String(checked);
+  d.plu_adresse = adresse;
+  await sheetsWrite('update', { id, fields:{ plu_concerne:String(checked), plu_adresse:adresse } });
+  showToast('✓ Info PLU enregistrée');
   renderDetail();
 }
 
 async function saveTransporteur(id) {
-  const val = document.getElementById('transp-input').value.trim();
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const val = document.getElementById('transp-input').value.trim();
   d.transporteur = val;
   await sheetsWrite('update', { id, fields:{ transporteur: val } });
-  showToast('✓ Transporteur enregistré !');
+  showToast('✓ Transporteur enregistré');
   renderDetail();
 }
 

@@ -4,18 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suivi Pose · Leroy Merlin</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh}
 :root{--g:#78BE20;--gd:#5a9118;--gl:#e8f5d0;--gx:#f4fae8;--blk:#1a1a1a;--mid:#e0e0e0;--mut:#666}
-.btn{padding:7px 16px;border-radius:4px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn{padding:8px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px;justify-content:center}
 .btn-p{background:var(--g);color:white}.btn-p:hover{background:var(--gd)}
 .btn-o{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:white}.btn-o:hover{border-color:var(--g);color:var(--g)}
 .btn-d{background:var(--blk);color:white}.btn-d:hover{background:#333}
-.btn-sm{padding:5px 12px;font-size:12px}
+.btn-sm{padding:6px 12px;font-size:12px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-link-small{background:none;border:none;font-size:12px;color:#bbb;cursor:pointer;text-decoration:underline}
 /* HEADER */
 .hdr{background:var(--blk);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .logo{display:flex;align-items:center;gap:10px}.tri{width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:24px solid var(--g)}
@@ -31,7 +33,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;mi
 .dos-grid{display:flex;flex-direction:column;gap:10px}
 .dos-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s}
 .dos-card:hover{border-color:var(--g);box-shadow:0 2px 8px rgba(120,190,32,.12)}
-.sp{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.sp{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 .sp1{background:#fff3e0;color:#e65100}.sp2{background:#e3f2fd;color:#1565c0}.sp3{background:#f3e5f5;color:#6a1b9a}
 .sp4{background:#fce4ec;color:#880e4f}.sp5{background:#e8f5d0;color:#3a7008}.sp6{background:var(--g);color:white}
 .form-card{background:white;border-radius:8px;border:1px solid var(--mid);padding:24px;margin-bottom:20px}
@@ -40,12 +42,10 @@ label{font-size:12px;font-weight:600;color:#444;text-transform:uppercase;letter-
 input,textarea{padding:9px 12px;border:1.5px solid var(--mid);border-radius:5px;font-size:14px;font-family:inherit;background:white;color:var(--blk);transition:border-color .15s}
 input:focus,textarea:focus{outline:none;border-color:var(--g)}
 textarea{resize:vertical;min-height:72px}
-/* CARDS */
 .ic{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-bottom:12px}
 .ict{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:12px}
 .ir{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
 .ir:last-child{border:none}
-/* TIMELINE ADMIN */
 .atl{display:flex;flex-direction:column}
 .tli{display:flex;gap:14px;align-items:flex-start;position:relative}
 .tli:not(:last-child) .tll{position:absolute;left:11px;top:26px;width:2px;bottom:-10px;background:var(--mid)}
@@ -54,7 +54,7 @@ textarea{resize:vertical;min-height:72px}
 .tld.done{background:var(--g);color:white}.tld.current{background:var(--gl);border:2px solid var(--g);color:var(--gd)}.tld.pending{background:white;border:2px solid var(--mid);color:#bbb}
 .tlc{flex:1;padding-bottom:20px}
 .step-sel{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.step-btn{width:100%;text-align:left;padding:8px 12px;border-radius:5px;border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;background:#f5f5f5;color:var(--blk);transition:all .15s}
+.step-btn{width:100%;text-align:left;padding:8px 12px;border-radius:5px;border:1.5px solid transparent;font-size:12px;font-weight:600;cursor:pointer;background:#f5f5f5;color:var(--blk);transition:all .15s;display:flex;align-items:center}
 .step-btn:hover{background:var(--gl);border-color:var(--g);color:var(--gd)}.step-btn.sel{background:var(--g);color:white;border-color:var(--g)}
 /* CLIENT */
 .wc{background:white;border-radius:10px;border:1px solid var(--mid);overflow:hidden;margin-bottom:16px}
@@ -67,43 +67,71 @@ textarea{resize:vertical;min-height:72px}
 .cibl{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .cibv{font-size:16px;font-weight:800;margin-top:2px}
 .stl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:14px}
-/* TIMELINE PC */
-.only-pc{display:flex}.only-mob{display:none}
-.ctl-pc{display:flex;flex-direction:row-reverse;width:100%;overflow-x:auto;padding:0 8px}
-.cst{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;min-width:90px;opacity:0;animation:fi .4s ease forwards}
-.cst:not(:first-child)::before{content:'';position:absolute;right:50%;top:19px;width:100%;height:2px;background:var(--mid);z-index:0}
-.cst.cdone:not(:first-child)::before{background:var(--g)}.cst.ccur:not(:first-child)::before{background:linear-gradient(to left,var(--g),var(--mid))}
-.cico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;z-index:1}
-.cico.done{background:var(--g);color:white;font-size:18px}.cico.cur{background:white;border:3px solid var(--g);color:var(--g);animation:pulse 2s ease infinite}.cico.pend{background:#f0f0f0;color:#ccc}
-.clbl{font-size:11px;font-weight:700;text-align:center;margin-top:8px;line-height:1.3;padding:0 4px}
-.clbl.done{color:var(--gd)}.clbl.cur{color:var(--blk)}.clbl.pend{color:#bbb}
-.cdt{font-size:10px;color:var(--mut);margin-top:3px;text-align:center}
-.cbadge{display:inline-block;background:var(--g);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;text-transform:uppercase}
-/* TIMELINE MOBILE */
-.ctl-mob{display:flex;flex-direction:column-reverse}
-.mst{display:flex;gap:14px;align-items:flex-start;position:relative;transform:translateY(10px);opacity:0;animation:fu .4s ease forwards}
-.mst:not(:first-child) .mln{position:absolute;left:15px;bottom:-4px;width:2px;top:34px;background:var(--mid)}
-.mst.mdone:not(:first-child) .mln{background:var(--g)}.mst.mcur:not(:first-child) .mln{background:linear-gradient(to bottom,var(--mid),var(--g))}
-.mico{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;z-index:1;margin-top:2px}
-.mico.done{background:var(--g);color:white}.mico.cur{background:white;border:2.5px solid var(--g);color:var(--g);animation:pulse 2s ease infinite}.mico.pend{background:#f5f5f5;color:#ccc}
-.mct{flex:1;padding-bottom:18px}.mtt{font-size:14px;font-weight:700}.mtt.pend{color:#bbb}.mdt{font-size:11px;color:var(--mut);margin-top:2px}
+.step-banner{background:var(--gx);border-left:3px solid var(--g);border-radius:0 6px 6px 0;padding:10px 14px;font-size:13px;color:var(--gd);font-weight:600;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+/* TIMELINE SERPENTIN — pleine largeur, 2 lignes, toutes tailles */
+.serpent{width:100%;margin-bottom:4px}
+.srow{display:flex;justify-content:space-between;align-items:flex-start;position:relative;padding:0 4px;gap:2px}
+.srow::before{content:'';position:absolute;top:18px;left:8%;right:8%;height:2px;background:var(--mid);z-index:0}
+.srow.sdone::before{background:var(--g)}
+.srow2::before{background:var(--mid)}
+.snode{display:flex;flex-direction:column;align-items:center;position:relative;z-index:1;flex:1;min-width:0}
+.sdot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:6px;flex-shrink:0}
+.sdot.done{background:var(--g);color:white}
+.sdot.cur{background:white;border:3px solid var(--g);color:var(--g);animation:pulse 2s ease infinite}
+.sdot.pend{background:#f0f0f0;color:#ccc;border:2px solid var(--mid)}
+.slbl{font-size:9.5px;font-weight:700;text-align:center;max-width:68px;line-height:1.25;word-break:break-word}
+.slbl.done{color:var(--gd)}.slbl.cur{color:var(--blk)}.slbl.pend{color:#bbb}
+.sbadge{display:block;font-size:8px;font-weight:700;background:var(--g);color:white;padding:1px 6px;border-radius:8px;margin-top:3px;text-transform:uppercase}
+.sturn{position:absolute;right:7%;top:18px;width:2px;height:44px;background:var(--mid);z-index:0}
+.sturn.sdone{background:var(--g)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(120,190,32,.4)}50%{box-shadow:0 0 0 6px rgba(120,190,32,0)}}
+/* PASTILLES DOCUMENTS */
+.doc-pills{display:flex;gap:8px;margin-bottom:20px}
+.dpill{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 8px;border-radius:8px;font-size:11px;font-weight:700;position:relative;cursor:default;text-align:center}
+.dpill i{font-size:18px}
+.dpill.active{background:var(--gl);color:var(--gd);border:1.5px solid var(--g);cursor:pointer}
+.dpill.active:hover{background:#dcf0c4}
+.dpill.todo{background:#f5f5f5;color:#bbb;border:1.5px solid var(--mid)}
+.dpill-check{position:absolute;top:4px;right:6px;font-size:11px!important}
 /* CONTACT */
 .cc{background:var(--blk);color:white;border-radius:8px;padding:16px 20px;display:flex;align-items:center;gap:14px;margin-top:8px}
 .cav{width:40px;height:40px;border-radius:50%;background:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
-/* SIGNATURE */
+/* CARDS GENERIQUES */
 .sc{background:white;border-radius:8px;border:1px solid var(--mid);padding:18px 20px;margin-top:14px}
 .ss{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:6px;font-size:13px;font-weight:600}
 .ss.unsigned{background:#fff8e1;color:#e65100}.ss.signed{background:var(--gl);color:var(--gd)}
 .upload-zone{border:2px dashed var(--mid);border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;background:white;margin:12px 0;transition:all .2s}
 .upload-zone:hover{border-color:var(--g);background:var(--gx)}
+/* PROMO / ALERT */
+.promo-box{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--gl),var(--gx));border:1.5px dashed var(--g);border-radius:8px;padding:12px 16px}
+.alert-box{display:flex;align-items:flex-start;gap:10px;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px 16px;color:#8d5b00}
+/* PDF VIEWER PRO */
+.pdf-frame{background:#3a3d40;border-radius:8px;overflow:hidden;margin:12px 0}
+.pdf-toolbar{background:#2c2f31;padding:9px 14px;display:flex;justify-content:space-between;align-items:center}
+.pdf-btn{background:#4a4d50;color:white;border:none;border-radius:5px;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px}
+.pdf-btn:hover{background:#5a5d60}
+.pdf-canvas-wrap{max-height:480px;overflow-y:auto;display:flex;justify-content:center;padding:20px;background:#525659}
+.pdf-canvas-wrap canvas{box-shadow:0 4px 20px rgba(0,0,0,.5);border-radius:2px}
+.scroll-hint{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff8e1;border-radius:6px;font-size:12px;color:#e65100;font-weight:600;margin-bottom:10px}
+/* SIGNATURE PRO */
+.sig-wrap-pro{position:relative;border:1.5px solid var(--mid);border-radius:8px;background:linear-gradient(180deg,#fafafa,white);overflow:hidden;cursor:crosshair;margin-bottom:12px}
+.sig-wrap-pro canvas{display:block;width:100%;height:170px;touch-action:none;position:relative;z-index:1}
+.sig-placeholder-pro{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:#c5c5c5;text-align:center;pointer-events:none;z-index:0}
+.sig-line{position:absolute;bottom:34px;left:24px;right:24px;height:1px;background:#ddd;z-index:0}
+.btn-sig-clear{background:white;border:1.5px solid var(--mid);border-radius:5px;padding:5px 12px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:#444}
+.btn-sig-clear:hover{border-color:var(--g);color:var(--gd)}
+.success-box{background:var(--gl);border:1px solid var(--g);border-radius:8px;padding:18px 20px;text-align:center;color:var(--gd)}
 /* UTILS */
 .toast{position:fixed;bottom:24px;right:24px;background:var(--g);color:white;padding:12px 20px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:320px}
 .toast.show{opacity:1;transform:translateY(0)}
 .lbar{height:3px;background:var(--g);animation:sl 1.5s infinite;display:none;position:fixed;top:0;left:0;right:0;z-index:999}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(120,190,32,.4)}50%{box-shadow:0 0 0 7px rgba(120,190,32,0)}}
-@keyframes fu{to{opacity:1;transform:translateY(0)}}@keyframes fi{to{opacity:1}}
 @keyframes sl{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
-@media(max-width:680px){.only-pc{display:none!important}.only-mob{display:flex!important;flex-direction:column}}
+@media(max-width:680px){
+  .slbl{max-width:54px;font-size:8.5px}
+  .sdot{width:32px;height:32px;font-size:13px}
+  .doc-pills{flex-wrap:wrap}
+  .dpill{min-width:90px}
+}
 </style>
 </head>
 <body>
@@ -131,8 +159,8 @@ textarea{resize:vertical;min-height:72px}
   <div class="hdr">
     <div class="logo"><div class="tri"></div><div class="logo-t">LEROY MERLIN<br><span class="logo-s">Admin · Suivi pose</span></div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-p btn-sm" onclick="showTab('new')">+ Nouveau</button>
-      <button class="btn btn-o btn-sm" onclick="loadAll()">↻ Actualiser</button>
+      <button class="btn btn-p btn-sm" onclick="showTab('new')"><i class="ti ti-plus"></i> Nouveau</button>
+      <button class="btn btn-o btn-sm" onclick="loadAll()"><i class="ti ti-refresh"></i></button>
       <button class="btn btn-o btn-sm" onclick="doLogout()">Déconnexion</button>
     </div>
   </div>
@@ -148,21 +176,30 @@ textarea{resize:vertical;min-height:72px}
       <div id="listeDos" class="dos-grid"></div>
       <div id="formNew" style="display:none;margin-top:20px">
         <div class="form-card">
-          <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><span style="color:var(--g)">▶</span> Nouveau dossier</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><i class="ti ti-plus" style="color:var(--g)"></i> Nouveau dossier</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="fg">
+              <label>N° de devis / dossier</label>
+              <input id="fid" placeholder="ex: 360150" onblur="checkDosId()">
+              <div id="fid-msg" style="font-size:11px;min-height:14px"></div>
+            </div>
             <div class="fg"><label>Nom client</label><input id="fnom" placeholder="Jean Dupont"></div>
             <div class="fg"><label>Gamme</label><input id="fgam" placeholder="Parquet chêne"></div>
+            <div class="fg"><label>Modèle détaillé</label><input id="fmod" placeholder="Chêne massif 14mm premium"></div>
+            <div class="fg"><label>Artisan / Poseur</label><input id="fart" placeholder="Atelier Dubois"></div>
             <div class="fg"><label>Téléphone</label><input id="ftel" placeholder="06 xx xx xx xx"></div>
             <div class="fg"><label>Email</label><input id="feml" type="email" placeholder="client@mail.fr"></div>
             <div class="fg"><label>Conseiller</label><input id="fcon" placeholder="Sophie Leclerc"></div>
             <div class="fg"><label>Tél. conseiller</label><input id="ftlc" placeholder="03 xx xx xx xx"></div>
             <div class="fg"><label>Estimatif (€)</label><input id="fest" type="number" placeholder="2800"></div>
             <div class="fg"><label>Prix final (€)</label><input id="fpfin" type="number" placeholder="3100"></div>
+            <div class="fg"><label>Promo éligible</label><input id="fpromo" placeholder="-10% pose"></div>
+            <div class="fg"><label>Lien éco-PTZ</label><input id="fecoptz" type="url" placeholder="https://..."></div>
             <div class="fg" style="grid-column:1/-1"><label>Notes</label><textarea id="fnot" placeholder="Notes..."></textarea></div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
-            <button class="btn btn-p" onclick="creerDos()">Créer le dossier</button>
+            <button class="btn btn-p" onclick="creerDos()"><i class="ti ti-check"></i> Créer le dossier</button>
           </div>
         </div>
       </div>
@@ -170,7 +207,7 @@ textarea{resize:vertical;min-height:72px}
   </div>
   <div id="vDetail" style="display:none">
     <div class="page">
-      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;margin-bottom:16px;padding:0" onclick="goListe()">← Retour à la liste</button>
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;margin-bottom:16px;padding:0;display:flex;align-items:center;gap:6px" onclick="goListe()"><i class="ti ti-arrow-left"></i> Retour à la liste</button>
       <div id="detailCont"></div>
     </div>
   </div>
@@ -184,7 +221,7 @@ textarea{resize:vertical;min-height:72px}
   <div style="max-width:860px;margin:0 auto;padding:24px 16px">
     <div id="cli-body">
       <div style="text-align:center;padding:60px 20px;color:#aaa">
-        <div style="font-size:32px;margin-bottom:12px">⏳</div>Chargement de votre dossier...
+        <i class="ti ti-loader-2" style="font-size:32px;margin-bottom:12px;display:block"></i>Chargement de votre dossier...
       </div>
     </div>
   </div>

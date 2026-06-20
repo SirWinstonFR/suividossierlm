@@ -15,14 +15,11 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Récupère le token depuis l'URL ou le sessionStorage
 function getToken() {
-  // 1. Chemin URL : /suividossierlm/client/TOKEN
   const parts = location.pathname.split('/').filter(Boolean);
   const idx = parts.indexOf('client');
   if (idx !== -1 && parts[idx+1]) return parts[idx+1];
 
-  // 2. Redirection GitHub Pages via 404.html
   const redirect = sessionStorage.getItem('gh_redirect');
   if (redirect) {
     sessionStorage.removeItem('gh_redirect');
@@ -30,16 +27,14 @@ function getToken() {
     const ridx = rparts.indexOf('client');
     if (ridx !== -1 && rparts[ridx+1]) return rparts[ridx+1];
   }
-
-  // 3. Token persistant (rechargement de page)
-  return sessionStorage.getItem('cli_token') || null;
+  return null;
 }
 
 window.onload = function() {
   const token = getToken();
-  if (token) {
-    // Persiste le token pour les rechargements
-    sessionStorage.setItem('cli_token', token);
+  const savedId = sessionStorage.getItem('cli_dossier_id');
+
+  if (token || savedId) {
     showView('vClient');
     initClient(token);
   } else if (sessionStorage.getItem('lm_auth') === 'ok') {
