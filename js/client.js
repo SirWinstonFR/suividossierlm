@@ -67,37 +67,83 @@ function renderClient(d) {
   const hasPrixEvo = d.prix_est && d.prix_final && d.prix_est !== d.prix_final;
   const stepDesc = STEPS[e-1]?.desc || '';
 
-  // === TIMELINE SERPENTIN — 4+4, toutes tailles d'écran ===
+  // === TIMELINE SERPENTIN PRO — SVG avec chemin courbe ===
   const half = Math.ceil(STEPS.length/2);
   const row1 = STEPS.slice(0, half);
   const row2 = STEPS.slice(half).reverse();
+  const n = half;
 
-  function nodeHtml(s, idx, isRow1) {
-    const realIdx = isRow1 ? idx : (STEPS.length - 1 - idx);
-    const n = realIdx + 1;
-    const ic = n<e?'done':n===e?'cur':'pend';
-    return `<div class="snode">
-      <div class="sdot ${ic}">${ic==='done'?'<i class="ti ti-check"></i>':`<i class="ti ${s.i}"></i>`}</div>
-      <div class="slbl ${ic}">${s.l}</div>
-      ${n===e?'<span class="sbadge">En cours</span>':''}
-    </div>`;
+  // Calcul des positions (coordonnées sur grille 0-680, padding latéral)
+  const padX = 50, usableW = 680 - padX*2;
+  const stepW = usableW / (n - 1);
+  const y1 = 36, y2 = 130;
+  const r = 20;
+
+  function dotsRow(stepsArr, yPos, isRow1) {
+    return stepsArr.map((s, i) => {
+      const realIdx = isRow1 ? i : (STEPS.length - 1 - i);
+      const num = realIdx + 1;
+      const cx = padX + i*stepW;
+      const st = num<e?'done':num===e?'cur':'pend';
+      let fill = st==='done' ? 'var(--g)' : st==='cur' ? 'white' : '#f0f0f0';
+      let stroke = st==='done' ? 'var(--g)' : st==='cur' ? 'var(--g)' : '#d8d8d8';
+      let strokeW = st==='cur' ? 3 : 1.5;
+      return { cx, cy:yPos, num, st, s, fill, stroke, strokeW };
+    });
   }
 
-  const row1Html = row1.map((s,i) => nodeHtml(s,i,true)).join('');
-  const row2Html = row2.map((s,i) => nodeHtml(s,i,false)).join('');
-  const row1Done = (half) <= e;
-  const row2StartIdx = half;
-  const turnDone = e > half;
+  const d1 = dotsRow(row1, y1, true);
+  const d2 = dotsRow(row2, y2, false);
+
+  // Chemin de connexion : ligne 1 (gauche->droite), coude à droite, ligne 2 (droite->gauche)
+  const lastX1 = d1[d1.length-1].cx, firstX2 = d2[0].cx;
+  const pathSegments = [
+    `M ${d1[0].cx} ${y1}`,
+    ...d1.slice(1).map(p => `L ${p.cx} ${y1}`),
+    `Q ${lastX1+30} ${y1} ${lastX1+30} ${(y1+y2)/2}`,
+    `Q ${lastX1+30} ${y2} ${firstX2} ${y2}`,
+    ...d2.slice(1).map(p => `L ${p.cx} ${y2}`),
+  ].join(' ');
+
+  // Progression : combien de segments sont "done" pour colorer le path en vert jusque-là
+  const totalDots = STEPS.length;
+  const progressRatio = Math.min((e-1) / (totalDots-1), 1);
+
+  const dotsSvg = [...d1, ...d2].map(p => `
+    <g>
+      <circle cx="${p.cx}" cy="${p.cy}" r="${r}" fill="${p.fill}" stroke="${p.stroke}" stroke-width="${p.strokeW}"/>
+      ${p.st==='done'
+        ? `<path d="M ${p.cx-7} ${p.cy} l 4 4 l 9 -9" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+        : `<text x="${p.cx}" y="${p.cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="700" fill="${p.st==='cur'?'var(--gd)':'#bbb'}">${p.num}</text>`
+      }
+      ${p.st==='cur' ? `<circle cx="${p.cx}" cy="${p.cy}" r="${r+6}" fill="none" stroke="var(--g)" stroke-width="1.5" opacity="0.4"><animate attributeName="r" values="${r+4};${r+10};${r+4}" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/></circle>` : ''}
+    </g>`).join('');
+
+  const labelsSvg = [...d1, ...d2].map(p => {
+    const words = p.s.l.split(' ');
+    const line1 = words.slice(0, Math.ceil(words.length/2)).join(' ');
+    const line2 = words.slice(Math.ceil(words.length/2)).join(' ');
+    const ly = p.cy < 80 ? p.cy - r - 10 : p.cy + r + 16;
+    const color = p.st==='done' ? 'var(--gd)' : p.st==='cur' ? 'var(--blk)' : '#bbb';
+    const weight = p.st==='cur' ? '700' : '600';
+    return `
+      <text x="${p.cx}" y="${ly}" text-anchor="middle" font-size="10" font-weight="${weight}" fill="${color}">
+        <tspan x="${p.cx}" dy="0">${line1}</tspan>
+        ${line2?`<tspan x="${p.cx}" dy="12">${line2}</tspan>`:''}
+      </text>
+      ${p.st==='cur'?`<rect x="${p.cx-26}" y="${p.cy < 80 ? p.cy - r - 38 : p.cy + r + 40}" width="52" height="14" rx="7" fill="var(--g)"/><text x="${p.cx}" y="${p.cy < 80 ? p.cy - r - 31 : p.cy + r + 47}" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="white">EN COURS</text>`:''}
+    `;
+  }).join('');
 
   const timelineHtml = `
-    <div class="serpent">
-      <div class="srow ${row1Done?'sdone':''}">
-        ${row1Html}
-        <div class="sturn ${turnDone?'sdone':''}"></div>
-      </div>
-      <div class="srow srow2">
-        ${row2Html}
-      </div>
+    <div class="serpent-pro">
+      <svg width="100%" viewBox="0 0 680 175" style="overflow:visible">
+        <path d="${pathSegments}" fill="none" stroke="#e0e0e0" stroke-width="3" stroke-linecap="round"/>
+        <path d="${pathSegments}" fill="none" stroke="var(--g)" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray="2000" stroke-dashoffset="${2000 - 2000*progressRatio}" style="transition:stroke-dashoffset .6s ease"/>
+        ${dotsSvg}
+        ${labelsSvg}
+      </svg>
     </div>`;
 
   // === PASTILLES DOCUMENTS ===
@@ -170,10 +216,12 @@ function renderClient(d) {
     </div>` : '';
 
   // === SIGNATURE — bon de commande ===
-  const signBloc = e >= 5 ? `
+  // Affiché uniquement à l'étape 5 (en attente) OU si déjà signé (rappel à toutes les étapes suivantes)
+  const dejaSigne = d.signe === 'true';
+  const signBloc = (e === 5 || dejaSigne) ? `
     <div class="sc">
       <div class="ict" style="margin-bottom:10px">Bon de commande</div>
-      ${d.signe==='true'
+      ${dejaSigne
         ? `<div class="ss signed"><i class="ti ti-circle-check" style="font-size:18px"></i> Bon de commande signé le ${d.sig_date}</div>`
         : `<div class="ss unsigned"><i class="ti ti-clock" style="font-size:18px"></i> Signature attendue${d.prix_final?' pour <strong>'+parseInt(d.prix_final).toLocaleString('fr-FR')+' €</strong>':''}</div>
           <div style="font-size:13px;color:#555;margin:12px 0 4px">Chargez votre bon de commande PDF :</div>
@@ -229,12 +277,13 @@ function renderClient(d) {
     </div>` : '';
 
   // === DOCUMENT DE POSE — signature réutilisée automatiquement ===
-  const poseDocBloc = e >= 7 && d.sig_data ? `
+  const poseDejaSigne = d.signe_pose === 'true';
+  const poseDocBloc = (e === 7 || (poseDejaSigne && e >= 7)) && d.sig_data ? `
     <div class="sc">
       <div class="ict" style="margin-bottom:10px">Document de pose</div>
-      ${d.signe_pose==='true'
+      ${poseDejaSigne
         ? `<div class="ss signed"><i class="ti ti-circle-check" style="font-size:18px"></i> Document de pose signé automatiquement</div>`
-        : `<div style="font-size:13px;color:#555;margin-bottom:12px">Votre signature enregistrée sera appliquée automatiquement à ce document.</div>
+        : `<div style="font-size:13px;color:#555;margin-bottom:12px">Votre signature enregistrée sera appliquée automatiquement à ce document, et le PDF signé sera transmis à votre conseiller.</div>
            <div class="upload-zone" onclick="document.getElementById('fpdf-pose').click()">
              <input type="file" id="fpdf-pose" accept="application/pdf" style="display:none" onchange="onPdfPoseSelected(this.files[0],'${d.id}')">
              <i class="ti ti-file-upload" style="font-size:28px;color:var(--g);margin-bottom:8px;display:block"></i>
@@ -350,21 +399,49 @@ async function validerSignature(dosId) {
     const sigDataUrl = sigGetDataUrl();
     const result = await pdfGenSigned(sigDataUrl);
     if (!result) { btn.innerHTML='<i class="ti ti-circle-check"></i> Valider'; btn.disabled=false; return; }
+
+    // Téléchargement local pour le client
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([result.bytes],{type:'application/pdf'}));
     a.download = result.fileName; a.click();
+
     // Sauvegarde la signature pour réutilisation future
     await sheetsWrite('update',{id:dosId,fields:{signe:'true',sig_date:result.dateStr,sig_data:sigDataUrl}});
+
+    // Envoi automatique vers le Drive du client
+    btn.innerHTML='<i class="ti ti-loader-2"></i> Envoi vers votre espace...';
+    await sendPdfToDrive(dosId, result.bytes, result.fileName);
+
     document.getElementById('sign-zone').innerHTML=`
       <div class="success-box">
         <i class="ti ti-circle-check" style="font-size:28px"></i>
-        <div style="font-weight:700;font-size:15px;margin-top:6px">Document signé et téléchargé !</div>
-        <div style="font-size:13px;margin-top:4px;opacity:.85">Signé le ${result.dateStr}</div>
+        <div style="font-weight:700;font-size:15px;margin-top:6px">Document signé et transmis !</div>
+        <div style="font-size:13px;margin-top:4px;opacity:.85">Signé le ${result.dateStr} — une copie a été envoyée à votre conseiller</div>
       </div>`;
   } catch(err) {
     btn.innerHTML='<i class="ti ti-circle-check"></i> Valider'; btn.disabled=false;
     showToast('Erreur : ' + err.message);
   }
+}
+
+// Envoie le PDF signé (en base64) à Apps Script qui le dépose dans le Drive
+async function sendPdfToDrive(dosId, pdfBytes, fileName) {
+  try {
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const base64 = await blobToBase64(blob);
+    await sheetsWrite('uploadPdf', { id: dosId, fileName, base64Data: base64 });
+  } catch(e) {
+    console.warn('Envoi Drive échoué (le téléchargement local a fonctionné) :', e);
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 // Document de pose — réutilise la signature stockée automatiquement
@@ -380,7 +457,9 @@ async function onPdfPoseSelected(file, dosId) {
     a.href = URL.createObjectURL(new Blob([result.bytes],{type:'application/pdf'}));
     a.download = result.fileName; a.click();
     await sheetsWrite('update',{id:dosId,fields:{signe_pose:'true'}});
-    showToast('✓ Document de pose signé automatiquement !');
+    showToast('Envoi vers votre espace...');
+    await sendPdfToDrive(dosId, result.bytes, result.fileName);
+    showToast('✓ Document de pose signé et transmis !');
     renderClient(await sheetsGetById(dosId));
   } catch(e) {
     showToast('Erreur : ' + e.message);
