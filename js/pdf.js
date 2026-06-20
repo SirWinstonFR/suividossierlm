@@ -19,24 +19,21 @@ async function pdfLoad(file) {
   pdfUpdateUI();
 }
 
-// Charge un PDF directement depuis une URL (ex: lien Drive fourni par le conseiller)
+// Charge un PDF depuis Drive en passant par Apps Script (contourne le blocage CORS de Drive)
 async function pdfLoadFromUrl(url, fileName) {
-  // Convertit un lien de partage Drive classique en lien de téléchargement direct
-  const directUrl = toDriveDirectDownload(url);
-  const res = await fetch(directUrl);
-  if (!res.ok) throw new Error('Impossible de charger le document (statut ' + res.status + ')');
-  const blob = await res.blob();
-  const file = new File([blob], fileName || 'document.pdf', { type: 'application/pdf' });
-  await pdfLoad(file);
-}
+  const apiUrl = `${CFG.SCRIPT_URL}?action=getFile&url=${encodeURIComponent(url)}`;
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error('Erreur serveur (statut ' + res.status + ')');
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Document introuvable ou non accessible');
 
-function toDriveDirectDownload(url) {
-  // Transforme https://drive.google.com/file/d/XXXX/view?... en lien de téléchargement direct
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-  }
-  return url; // pas un lien Drive reconnu, on tente tel quel
+  const byteChars = atob(data.base64Data);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: 'application/pdf' });
+  const file = new File([blob], fileName || data.fileName || 'document.pdf', { type: 'application/pdf' });
+  await pdfLoad(file);
 }
 
 async function pdfRender(n) {
