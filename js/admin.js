@@ -2,7 +2,7 @@
 // admin.js — Interface Admin v3 (icônes SVG inline)
 // ============================================================
 
-let _dossiers = [], _curId = null;
+let _dossiers = [], _savDossiers = [], _curId = null, _curType = 'pose';
 
 function doLogin() {
   if (document.getElementById('lpwd').value === CFG.ADMIN_PWD) {
@@ -19,6 +19,8 @@ async function loadAll() {
   document.getElementById('lbar').style.display = 'block';
   try { _dossiers = await sheetsGetAll(); }
   catch(e) { showToast('Erreur : ' + e.message); _dossiers = []; }
+  try { _savDossiers = await savGetAll(); }
+  catch(e) { _savDossiers = []; }
   await loadCatalogue();
   await loadCreneaux();
   populateGammeSelect();
@@ -28,24 +30,41 @@ async function loadAll() {
 }
 
 function renderListe(f) {
-  let list = _dossiers;
-  if (f==='cours') list = _dossiers.filter(d => parseInt(d.etape) < STEPS.length);
-  if (f==='fin')   list = _dossiers.filter(d => parseInt(d.etape) === STEPS.length);
+  // Fusionne Pose et SAV, chacun marqué avec son type pour l'affichage et le routage
+  let list = [
+    ..._dossiers.map(d => ({...d, _type:'pose'})),
+    ..._savDossiers.map(d => ({...d, _type:'sav'})),
+  ];
+  if (f==='pose') list = list.filter(d => d._type==='pose');
+  if (f==='sav')  list = list.filter(d => d._type==='sav');
+  if (f==='cours') list = list.filter(d => {
+    const steps = d._type==='sav' ? STEPS_SAV : STEPS_POSE;
+    return parseInt(d.etape) < steps.length;
+  });
+  if (f==='fin') list = list.filter(d => {
+    const steps = d._type==='sav' ? STEPS_SAV : STEPS_POSE;
+    return parseInt(d.etape) === steps.length;
+  });
+
   const cont = document.getElementById('listeDos');
   if (!list.length) { cont.innerHTML='<div style="color:#aaa;padding:20px 0">Aucun dossier.</div>'; return; }
   cont.innerHTML = list.map(d => {
-    const e = parseInt(d.etape)||1, s = STEPS[e-1];
+    const steps = d._type==='sav' ? STEPS_SAV : STEPS_POSE;
+    const e = parseInt(d.etape)||1, s = steps[e-1];
     const prix = d.prix_final ? parseInt(d.prix_final).toLocaleString('fr-FR')+' €' : '—';
     const signé = d.signe==='true' ? `<span style="color:var(--g);font-size:11px;margin-left:8px">${icon('check',12)} Signé</span>` : '';
-    return `<div class="dos-card" onclick="openDetail('${d.id}')">
+    const typeTag = d._type==='sav'
+      ? `<span class="type-tag type-tag-sav">SAV</span>`
+      : `<span class="type-tag type-tag-pose">Pose</span>`;
+    return `<div class="dos-card" onclick="openDetail('${d.id}','${d._type}')">
       <div style="flex:1;min-width:0">
-        <div style="font-size:15px;font-weight:700">${d.nom}${signé}</div>
-        <div style="font-size:12px;color:var(--mut);margin-top:2px">N° ${d.id} · ${d.gamme||'—'} · ${d.conseiller||'—'}</div>
+        <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">${typeTag}${d.nom}${signé}</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:4px">N° ${d.id} · ${d._type==='sav' ? (d.produit_concerne||'—') : (d.gamme||'—')} · ${d.conseiller||'—'}</div>
       </div>
       <span class="sp sp${Math.min(e,6)}">${icon(s.ic,12)} ${s.l}</span>
-      <div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>
+      ${d._type==='pose' ? `<div style="font-size:15px;font-weight:700;color:var(--gd);white-space:nowrap">${prix}</div>` : '<div style="width:1px"></div>'}
       <div onclick="event.stopPropagation()">
-        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}')">${icon('link',14)} Lien</button>
+        <button class="btn btn-p btn-sm" onclick="copyLien('${d.token}','${d._type}')">${icon('link',14)} Lien</button>
       </div>
     </div>`;
   }).join('');
@@ -59,8 +78,16 @@ function filterTab(f,btn) {
 }
 function showTab(t) {
   document.getElementById('formNew').style.display = t==='new'?'block':'none';
-  if (t==='new') populateGammeSelect();
+  if (t==='new') { populateGammeSelect(); switchNewType('pose'); }
   if (t!=='new') renderListe();
+}
+
+function switchNewType(type) {
+  _curType = type;
+  document.getElementById('newTypePose').classList.toggle('active', type==='pose');
+  document.getElementById('newTypeSav').classList.toggle('active', type==='sav');
+  document.getElementById('formNewPose').style.display = type==='pose' ? 'block' : 'none';
+  document.getElementById('formNewSav').style.display = type==='sav' ? 'block' : 'none';
 }
 
 async function checkDosId() {
@@ -72,8 +99,17 @@ async function checkDosId() {
   msgEl.style.color = available ? 'var(--gd)' : '#e53935';
 }
 
-// CRÉER — formulaire simplifié, sans éco-PTZ (réservé à plus tard, modifiable depuis le détail)
-async function creerDos() {
+async function checkSavId() {
+  const id = document.getElementById('sid').value.trim();
+  const msgEl = document.getElementById('sid-msg');
+  if (!id) { msgEl.textContent=''; return; }
+  const available = await checkIdAvailable(id);
+  msgEl.textContent = available ? '✓ Numéro disponible' : '✗ Ce numéro existe déjà';
+  msgEl.style.color = available ? 'var(--gd)' : '#e53935';
+}
+
+// CRÉER — formulaire Pose
+async function creerDosPose() {
   const id  = document.getElementById('fid').value.trim();
   const nom = document.getElementById('fnom').value.trim();
   if (!id)  { showToast('Numéro de dossier requis.'); return; }
@@ -113,13 +149,45 @@ async function creerDos() {
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
     predevis_url:'', devis_url:'', commande_url:'', commande_signee_url:'', pose_signee_url:'',
   };
-  await sheetsWrite('append', { row });
+  await sheetsWrite('append', { row, sheetType:'pose' });
   _dossiers.unshift(row);
-  showToast('✓ Dossier '+id+' créé !');
+  showToast('✓ Dossier Pose '+id+' créé !');
   showTab('list');
 
   // Création automatique du dossier Drive dédié, en arrière-plan
   createDriveFolderFor(id, nom);
+}
+
+// CRÉER — formulaire SAV (plus léger, pas de Drive/signature/créneaux)
+async function creerDosSav() {
+  const id  = document.getElementById('sid').value.trim();
+  const nom = document.getElementById('snom').value.trim();
+  if (!id)  { showToast('Numéro de dossier requis.'); return; }
+  if (!nom) { showToast('Nom requis.'); return; }
+
+  const available = await checkIdAvailable(id);
+  if (!available) { showToast('Ce numéro de dossier existe déjà.'); return; }
+
+  const token = genToken();
+  const row = {
+    id, nom,
+    motif_sav:        document.getElementById('smotif').value||'',
+    produit_concerne: document.getElementById('sproduit').value||'',
+    etape: '1',
+    token,
+    email:          document.getElementById('seml').value||'',
+    tel:            document.getElementById('stel').value||'',
+    conseiller:     document.getElementById('scon').value||'',
+    tel_conseiller: document.getElementById('stlc').value||'',
+    notes:          document.getElementById('snot').value||'',
+    message_client: '',
+    date1: new Date().toLocaleDateString('fr-FR'),
+    date2:'',date3:'',date4:'',date5:'',date6:'',
+  };
+  await sheetsWrite('append', { row, sheetType:'sav' });
+  _savDossiers.unshift(row);
+  showToast('✓ Dossier SAV '+id+' créé !');
+  showTab('list');
 }
 
 async function createDriveFolderFor(id, nom) {
@@ -147,11 +215,13 @@ function closeCatalogueView() {
   document.getElementById('vListe').style.display = 'block';
 }
 
-function openDetail(id) {
+function openDetail(id, type) {
   _curId = id;
+  _curType = type || 'pose';
   document.getElementById('vListe').style.display = 'none';
   document.getElementById('vDetail').style.display = 'block';
-  renderDetail();
+  if (_curType === 'sav') renderDetailSav();
+  else renderDetail();
 }
 function goListe() {
   document.getElementById('vDetail').style.display = 'none';
@@ -442,12 +512,14 @@ function fromISO(iso) {
 }
 
 async function setEtape(n) {
-  const d = _dossiers.find(x=>x.id===_curId); if (!d) return;
+  const list = _curType === 'sav' ? _savDossiers : _dossiers;
+  const steps = _curType === 'sav' ? STEPS_SAV : STEPS_POSE;
+  const d = list.find(x=>x.id===_curId); if (!d) return;
   d.etape = String(n);
   if (!d['date'+n]) d['date'+n] = new Date().toLocaleDateString('fr-FR');
-  await sheetsWrite('update', { id:_curId, fields:{ etape:d.etape, ['date'+n]:d['date'+n] } });
-  renderDetail();
-  showToast('✓ ' + STEPS[n-1].l);
+  await sheetsWrite('update', { id:_curId, fields:{ etape:d.etape, ['date'+n]:d['date'+n] }, sheetType:_curType });
+  if (_curType === 'sav') renderDetailSav(); else renderDetail();
+  showToast('✓ ' + steps[n-1].l);
 }
 
 async function saveTarif(id) {
@@ -593,7 +665,120 @@ function sendStatusEmail(id) {
   window.open(gmailUrl, '_blank');
 }
 
-function copyLien(token) {
-  const lien = location.origin + CFG.BASE_PATH + '/client/' + token;
+function copyLien(token, type) {
+  const path = type === 'sav' ? '/sav/' : '/client/';
+  const lien = location.origin + CFG.BASE_PATH + path + token;
   navigator.clipboard.writeText(lien).then(() => showToast('✓ Lien copié !'));
+}
+
+// ============================================================
+// FICHE DÉTAIL — SAV (version allégée, pas de Drive/signature/créneaux)
+// ============================================================
+
+function renderDetailSav() {
+  const d = _savDossiers.find(x=>x.id===_curId); if (!d) return;
+  const e = parseInt(d.etape)||1, pct = Math.round(e/STEPS_SAV.length*100);
+  const lien = location.origin + CFG.BASE_PATH + '/sav/' + d.token;
+
+  const tl = STEPS_SAV.map((s,i) => {
+    const n=i+1, st=n<e?'done':n===e?'current':'pending';
+    return `<div class="tli ${n<e?'done':''}">
+      <div class="tll"></div>
+      <div class="tld ${st}">${st==='done'?icon('check',12):n}</div>
+      <div class="tlc">
+        <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">${icon(s.ic,14)}${s.l}</div>
+        ${d['date'+n]?`<div style="font-size:11px;color:var(--mut);margin-top:2px">${d['date'+n]}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const sbts = STEPS_SAV.map((s,i) =>
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${icon(s.ic,14)} ${s.l}</button>`
+  ).join('');
+
+  document.getElementById('detailCont').innerHTML = `
+    <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div>
+        <div style="font-size:20px;font-weight:700"><span class="type-tag type-tag-sav" style="margin-right:8px">SAV</span>${d.nom}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">N° ${d.id} · ${d.produit_concerne||'—'}</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">${icon('phone',13)} ${d.tel||'—'} &nbsp;·&nbsp; ${icon('mail',13)} ${d.email||'—'}</div>
+        <div style="height:6px;background:var(--mid);border-radius:3px;overflow:hidden;width:260px;margin:10px 0 4px">
+          <div style="height:100%;background:var(--g);border-radius:3px;width:${pct}%"></div>
+        </div>
+        <div style="font-size:12px;color:var(--mut)">Étape ${e}/${STEPS_SAV.length} — ${pct}%</div>
+      </div>
+      ${d.motif_sav?`<div style="text-align:right;max-width:260px">
+        <div style="font-size:11px;color:var(--mut)">Motif</div>
+        <div style="font-size:13px;font-weight:600;margin-top:3px">${d.motif_sav}</div>
+      </div>`:''}
+    </div>
+
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
+      <div>
+        <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
+        <div class="ic"><div class="ict">Avancement</div><div class="atl">${tl}</div></div>
+      </div>
+
+      <div>
+        <div class="ic">
+          <div class="ict">Détails du SAV</div>
+          <div class="fg" style="margin-bottom:8px"><label>Motif du SAV</label><textarea id="sav-motif" style="min-height:60px">${d.motif_sav||''}</textarea></div>
+          <div class="fg" style="margin-bottom:8px"><label>Produit concerné</label><input id="sav-produit" value="${d.produit_concerne||''}"></div>
+          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveSavDetails('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+        </div>
+
+        <div class="ic">
+          <div class="ict">Message pour le client</div>
+          <textarea id="sav-message" placeholder="Ex: Votre pièce a été commandée, livraison estimée sous 2 semaines." style="min-height:70px">${d.message_client||''}</textarea>
+          <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveSavMessage('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+        </div>
+
+        <div class="ic">
+          <div class="ict">Informations</div>
+          <div class="fg" style="margin-bottom:8px"><label>Conseiller</label><input id="sav-conseiller" value="${d.conseiller||''}"></div>
+          <div class="fg" style="margin-bottom:8px"><label>Tél. conseiller</label><input id="sav-tel-conseiller" value="${d.tel_conseiller||''}"></div>
+          <div class="fg" style="margin-bottom:8px"><label>Email client</label><input id="sav-email" type="email" value="${d.email||''}"></div>
+          <div class="fg" style="margin-bottom:8px"><label>Tél. client</label><input id="sav-tel" value="${d.tel||''}"></div>
+          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveSavContact('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+          ${d.notes?`<div style="margin-top:10px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">${d.notes}</div>`:''}
+        </div>
+
+        <div class="ic">
+          <div class="ict">Lien client</div>
+          <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
+          <button class="btn btn-p" style="width:100%" onclick="copyLien('${d.token}','sav')">${icon('copy',14)} Copier le lien client</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function saveSavDetails(id) {
+  const d = _savDossiers.find(x=>x.id===id); if (!d) return;
+  const motif = document.getElementById('sav-motif').value.trim();
+  const produit = document.getElementById('sav-produit').value.trim();
+  d.motif_sav = motif; d.produit_concerne = produit;
+  await sheetsWrite('update', { id, fields:{ motif_sav:motif, produit_concerne:produit }, sheetType:'sav' });
+  showToast('✓ Détails enregistrés');
+  renderDetailSav();
+}
+
+async function saveSavMessage(id) {
+  const d = _savDossiers.find(x=>x.id===id); if (!d) return;
+  const val = document.getElementById('sav-message').value.trim();
+  d.message_client = val;
+  await sheetsWrite('update', { id, fields:{ message_client: val }, sheetType:'sav' });
+  showToast('✓ Message enregistré');
+  renderDetailSav();
+}
+
+async function saveSavContact(id) {
+  const d = _savDossiers.find(x=>x.id===id); if (!d) return;
+  const conseiller = document.getElementById('sav-conseiller').value.trim();
+  const telConseiller = document.getElementById('sav-tel-conseiller').value.trim();
+  const email = document.getElementById('sav-email').value.trim();
+  const tel = document.getElementById('sav-tel').value.trim();
+  Object.assign(d, { conseiller, tel_conseiller: telConseiller, email, tel });
+  await sheetsWrite('update', { id, fields:{ conseiller, tel_conseiller:telConseiller, email, tel }, sheetType:'sav' });
+  showToast('✓ Contact enregistré');
+  renderDetailSav();
 }

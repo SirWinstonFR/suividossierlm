@@ -15,28 +15,33 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function getToken() {
+function getToken(type) {
   const parts = location.pathname.split('/').filter(Boolean);
-  const idx = parts.indexOf('client');
+  const idx = parts.indexOf(type);
   if (idx !== -1 && parts[idx+1]) return parts[idx+1];
 
   const redirect = sessionStorage.getItem('gh_redirect');
   if (redirect) {
     sessionStorage.removeItem('gh_redirect');
     const rparts = redirect.split('/').filter(Boolean);
-    const ridx = rparts.indexOf('client');
+    const ridx = rparts.indexOf(type);
     if (ridx !== -1 && rparts[ridx+1]) return rparts[ridx+1];
   }
   return null;
 }
 
 window.onload = function() {
-  const token = getToken();
+  const poseToken = getToken('client');
+  const savToken = getToken('sav');
   const savedId = sessionStorage.getItem('cli_dossier_id');
+  const savedSavId = sessionStorage.getItem('sav_dossier_id');
 
-  if (token || savedId) {
+  if (savToken || savedSavId) {
     showView('vClient');
-    initClient(token);
+    initSav(savToken);
+  } else if (poseToken || savedId) {
+    showView('vClient');
+    initClient(poseToken);
   } else if (sessionStorage.getItem('lm_auth') === 'ok') {
     showView('vAdmin');
     loadAll();
