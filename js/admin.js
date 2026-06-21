@@ -4,6 +4,15 @@
 
 let _dossiers = [], _savDossiers = [], _curId = null, _curType = 'pose';
 
+// Ferme toutes les vues admin (liste, détail, catalogue, créneaux, RDV à reporter)
+// avant d'en afficher une seule — évite l'empilement de plusieurs vues ouvertes.
+function hideAllAdminViews() {
+  ['vListe','vDetail','vCatalogue','vCreneaux','vRdvReporter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
 function doLogin() {
   if (document.getElementById('lpwd').value === CFG.ADMIN_PWD) {
     sessionStorage.setItem('lm_auth','ok');
@@ -204,27 +213,26 @@ async function createDriveFolderFor(id, nom) {
 }
 
 async function openCatalogueView() {
-  document.getElementById('vListe').style.display = 'none';
-  document.getElementById('vDetail').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vCatalogue').style.display = 'block';
   await loadCatalogue();
   renderCatalogueView();
 }
 function closeCatalogueView() {
-  document.getElementById('vCatalogue').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vListe').style.display = 'block';
 }
 
 function openDetail(id, type) {
   _curId = id;
   _curType = type || 'pose';
-  document.getElementById('vListe').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vDetail').style.display = 'block';
   if (_curType === 'sav') renderDetailSav();
   else renderDetail();
 }
 function goListe() {
-  document.getElementById('vDetail').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vListe').style.display = 'block';
 }
 

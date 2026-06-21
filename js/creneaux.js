@@ -11,15 +11,13 @@ async function loadCreneaux() {
 
 // === VUE ADMIN — Gestion des créneaux ===
 async function openCreneauxView() {
-  document.getElementById('vListe').style.display = 'none';
-  document.getElementById('vDetail').style.display = 'none';
-  document.getElementById('vCatalogue').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vCreneaux').style.display = 'block';
   await loadCreneaux();
   renderCreneauxView();
 }
 function closeCreneauxView() {
-  document.getElementById('vCreneaux').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vListe').style.display = 'block';
 }
 
@@ -174,7 +172,7 @@ function renderCreneauxClient(dossierId) {
 
   return `<div class="sc">
     <div class="ict">Prendre rendez-vous</div>
-    <div class="devis-text">Choisissez un créneau pour la visite technique :</div>
+    <div class="devis-text">Choisissez un créneau pour signer votre devis et passer commande :</div>
     <div class="creneau-client-grid">
       ${libres.slice(0,8).map(c => `
         <button class="creneau-client-btn" onclick="reserverCreneau('${c.id}','${dossierId}')">
@@ -210,16 +208,13 @@ function renderRdvBadge() {
 }
 
 async function openRdvAReporterView() {
-  document.getElementById('vListe').style.display = 'none';
-  document.getElementById('vDetail').style.display = 'none';
-  document.getElementById('vCatalogue').style.display = 'none';
-  document.getElementById('vCreneaux').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vRdvReporter').style.display = 'block';
   await loadCreneaux();
   renderRdvAReporterView();
 }
 function closeRdvAReporterView() {
-  document.getElementById('vRdvReporter').style.display = 'none';
+  hideAllAdminViews();
   document.getElementById('vListe').style.display = 'block';
   renderRdvBadge();
 }
