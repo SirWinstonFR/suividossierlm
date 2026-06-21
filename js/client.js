@@ -232,10 +232,25 @@ function renderClient(d) {
       </button>
     </div>` : '';
 
-  // === PRISE DE RDV — visible dès l'étape "Devis envoyé" si pas encore de RDV planifié ===
-  const creneauxBloc = (e === 4 && !d.date2 && typeof renderCreneauxClient === 'function')
-    ? renderCreneauxClient(d.id)
-    : '';
+  // === PRISE DE RDV — proposition de créneaux tant que rien n'est planifié, confirmation une fois pris ===
+  let creneauxBloc = '';
+  if (e === 4 && !d.date2 && typeof renderCreneauxClient === 'function') {
+    creneauxBloc = renderCreneauxClient(d.id);
+  } else if (e >= 4 && d.date2) {
+    const creneauPris = (typeof _creneaux !== 'undefined')
+      ? _creneaux.find(c => c.dossier_id === d.id && c.statut === 'pris')
+      : null;
+    creneauxBloc = `<div class="sc">
+      <div class="ict">Votre rendez-vous</div>
+      <div class="rdv-confirme">
+        ${icon('calendar',22)}
+        <div>
+          <div class="rdv-confirme-date">${d.date2}${creneauPris ? ` · ${creneauPris.heure_debut} — ${creneauPris.heure_fin}` : ''}</div>
+          <div class="rdv-confirme-sub">Pour la signature de votre devis et le passage de commande</div>
+        </div>
+      </div>
+    </div>`;
+  }
 
   // === SIGNATURE — bon de commande (chargé automatiquement, posté par le conseiller) ===
   const dejaSigne = d.signe === 'true';
