@@ -45,6 +45,7 @@ async function connecterClient() {
 
 async function initClient(token) {
   if (typeof loadCatalogue === 'function') await loadCatalogue();
+  if (typeof loadCreneaux === 'function') await loadCreneaux();
   const savedId = sessionStorage.getItem('cli_dossier_id');
   if (savedId) {
     try { const d = await sheetsGetById(savedId); if (d) { renderClient(d); return; } }
@@ -67,6 +68,25 @@ function renderClient(d) {
   const ini     = cons.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'LM';
   const hasPrixEvo = d.prix_est && d.prix_final && d.prix_est !== d.prix_final;
   const stepDesc = STEPS[e-1]?.desc || '';
+
+  // Équipe élargie — format stocké : "Nom|Rôle" une ligne par membre
+  const equipeMembres = (d.equipe||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+    const [nom, role] = l.split('|').map(s=>(s||'').trim());
+    return { nom, role: role || 'Membre de l\'équipe' };
+  });
+  const equipeBloc = equipeMembres.length ? `
+    <div class="equipe-list">
+      ${equipeMembres.map(m => {
+        const ini2 = m.nom.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'??';
+        return `<div class="equipe-item">
+          <div class="equipe-av">${ini2}</div>
+          <div>
+            <div class="equipe-nom">${m.nom}</div>
+            <div class="equipe-role">${m.role}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
 
   // === TIMELINE — grille JS pure, animée : pulse + progression segment par segment ===
   const half = Math.ceil(STEPS.length/2);
@@ -212,6 +232,11 @@ function renderClient(d) {
       </button>
     </div>` : '';
 
+  // === PRISE DE RDV — visible dès l'étape "Devis envoyé" si pas encore de RDV planifié ===
+  const creneauxBloc = (e === 4 && !d.date2 && typeof renderCreneauxClient === 'function')
+    ? renderCreneauxClient(d.id)
+    : '';
+
   // === SIGNATURE — bon de commande (chargé automatiquement, posté par le conseiller) ===
   const dejaSigne = d.signe === 'true';
   const commandeDispo = !!d.commande_url;
@@ -338,6 +363,37 @@ function renderClient(d) {
             <div class="prix-evo-row"><span class="ir-l">Prix final</span><span class="prix-evo-final">${parseInt(d.prix_final).toLocaleString('fr-FR')} €</span></div>
           </div></div>`:''}
 
+        ${d.prix_produit && d.prix_pose ? `
+        <div class="sc">
+          <div class="ict">Détail de votre tarif</div>
+          <div class="tarif-total">
+            <span class="tarif-total-label">Montant total</span>
+            <span class="tarif-total-val">${(parseInt(d.prix_produit)+parseInt(d.prix_pose)).toLocaleString('fr-FR')} €</span>
+          </div>
+          <button class="tarif-toggle" onclick="toggleTarifDetail()">
+            <span id="tarif-toggle-text">Voir le détail produit / pose</span>
+            <span id="tarif-toggle-ic">${icon('chevronright',14)}</span>
+          </button>
+          <div id="tarif-detail" style="display:none">
+            <div class="tarif-row">
+              <div class="tarif-row-ic">${icon('discount',16)}</div>
+              <div class="tarif-row-body">
+                <div class="tarif-row-label">Produit</div>
+                <div class="tarif-row-bar"><div class="tarif-row-fill" style="width:${Math.round(parseInt(d.prix_produit)/(parseInt(d.prix_produit)+parseInt(d.prix_pose))*100)}%"></div></div>
+              </div>
+              <div class="tarif-row-val">${parseInt(d.prix_produit).toLocaleString('fr-FR')} €</div>
+            </div>
+            <div class="tarif-row">
+              <div class="tarif-row-ic">${icon('signature',16)}</div>
+              <div class="tarif-row-body">
+                <div class="tarif-row-label">Pose</div>
+                <div class="tarif-row-bar"><div class="tarif-row-fill tarif-row-fill-pose" style="width:${Math.round(parseInt(d.prix_pose)/(parseInt(d.prix_produit)+parseInt(d.prix_pose))*100)}%"></div></div>
+              </div>
+              <div class="tarif-row-val">${parseInt(d.prix_pose).toLocaleString('fr-FR')} €</div>
+            </div>
+          </div>
+        </div>` : ''}
+
         ${stepDesc?`<div class="step-banner">${icon(STEPS[e-1].ic,16)} ${stepDesc}</div>`:''}
 
         ${d.message_client ? `<div class="conseiller-msg">
@@ -358,6 +414,7 @@ function renderClient(d) {
         ${avantagesBloc}
         ${pluBloc}
         ${devisBloc}
+        ${creneauxBloc}
         ${signBloc}
         ${poseDocBloc}
         ${delaiBloc}
@@ -368,10 +425,11 @@ function renderClient(d) {
           <div class="cav">${ini}</div>
           <div>
             <div class="cc-name">${cons}</div>
-            <div class="cc-role">Conseiller pose Leroy Merlin</div>
+            <div class="cc-role">Conseiller en charge de votre projet</div>
             ${d.tel_conseiller?`<div class="cc-tel">${icon('phone',14)} ${d.tel_conseiller}</div>`:''}
           </div>
         </div>
+        ${equipeBloc}
 
         <div style="text-align:center;margin-top:22px">
           <button onclick="sessionStorage.removeItem('cli_dossier_id');showLoginClient()" class="btn-link-small">
@@ -393,6 +451,16 @@ function renderClient(d) {
 }
 
 function openLink(url) { window.open(url, '_blank'); }
+
+function toggleTarifDetail() {
+  const detail = document.getElementById('tarif-detail');
+  const text = document.getElementById('tarif-toggle-text');
+  const ic = document.getElementById('tarif-toggle-ic');
+  const open = detail.style.display !== 'none';
+  detail.style.display = open ? 'none' : 'block';
+  text.textContent = open ? 'Voir le détail produit / pose' : 'Masquer le détail';
+  ic.innerHTML = open ? icon('chevronright',14) : icon('chevronright',14).replace('<svg','<svg style="transform:rotate(90deg)"');
+}
 
 function computeDateEstimeeClient(dateConfirmation, semaines) {
   const [j,m,a] = dateConfirmation.split('/');

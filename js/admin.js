@@ -20,6 +20,7 @@ async function loadAll() {
   try { _dossiers = await sheetsGetAll(); }
   catch(e) { showToast('Erreur : ' + e.message); _dossiers = []; }
   await loadCatalogue();
+  await loadCreneaux();
   populateGammeSelect();
   document.getElementById('lbar').style.display = 'none';
   renderListe();
@@ -104,6 +105,7 @@ async function creerDos() {
     fiche_url:      document.getElementById('ffiche-link')?.value || '',
     delai_fab_semaines: '',
     message_client: '',
+    equipe: '', prix_produit: '', prix_pose: '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
@@ -224,6 +226,7 @@ function renderDetail() {
 
         <div id="tab-projet" class="dtab-panel" style="display:none">
           ${renderTechBloc(d)}
+          ${renderTarifBloc(d)}
           ${renderDelaiBloc(d)}
           ${renderTranspBloc(d)}
         </div>
@@ -250,6 +253,13 @@ function renderDetail() {
             <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Préparer l'email de suivi</button>
             ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre votre logiciel mail avec le message pré-rempli.</div>`:''}
             ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
+          </div>
+          <div class="ic">
+            <div class="ict">Équipe en charge du projet</div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:8px">Un membre par ligne, format : <code>Nom | Rôle</code></div>
+            <textarea id="equipe-input" placeholder="Marc Dubois | Technicien poseur&#10;Sophie Leclerc | Conseillère commerciale" style="min-height:80px">${d.equipe||''}</textarea>
+            <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveEquipe('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+            <div style="font-size:11px;color:var(--mut);margin-top:8px">Affiché sous le conseiller principal, côté client.</div>
           </div>
         </div>
 
@@ -317,6 +327,19 @@ function renderDriveBloc(d) {
            <div style="font-size:11px;color:var(--mut);margin-top:8px">Actualisez la page dans quelques secondes</div>`
       }
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés ici.</div>
+    </div>`;
+}
+
+function renderTarifBloc(d) {
+  const total = (parseInt(d.prix_produit)||0) + (parseInt(d.prix_pose)||0);
+  return `
+    <div class="ic">
+      <div class="ict">Détail tarifaire (produit / pose)</div>
+      <div class="fg" style="margin-bottom:8px"><label>Prix produit (€)</label><input id="prix-produit" type="number" min="0" placeholder="ex: 2200" value="${d.prix_produit||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Prix pose (€)</label><input id="prix-pose" type="number" min="0" placeholder="ex: 600" value="${d.prix_pose||''}"></div>
+      ${total>0?`<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">Total : ${total.toLocaleString('fr-FR')} €</div>`:''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTarif('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Le détail est affiché côté client, dépliable, sous le prix final.</div>
     </div>`;
 }
 
@@ -395,6 +418,25 @@ async function setEtape(n) {
   await sheetsWrite('update', { id:_curId, fields:{ etape:d.etape, ['date'+n]:d['date'+n] } });
   renderDetail();
   showToast('✓ ' + STEPS[n-1].l);
+}
+
+async function saveTarif(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const prod = document.getElementById('prix-produit').value.trim();
+  const pose = document.getElementById('prix-pose').value.trim();
+  d.prix_produit = prod; d.prix_pose = pose;
+  await sheetsWrite('update', { id, fields:{ prix_produit: prod, prix_pose: pose } });
+  showToast('✓ Détail tarifaire enregistré');
+  renderDetail();
+}
+
+async function saveEquipe(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const val = document.getElementById('equipe-input').value.trim();
+  d.equipe = val;
+  await sheetsWrite('update', { id, fields:{ equipe: val } });
+  showToast('✓ Équipe mise à jour');
+  renderDetail();
 }
 
 async function saveMessageClient(id) {

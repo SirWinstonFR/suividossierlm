@@ -22,6 +22,16 @@ async function catalogueGetAll() {
   return rows.map(row => { const o = {}; h.forEach((k,i) => o[k] = row[i]||''); return o; });
 }
 
+async function creneauxGetAll() {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent('Creneaux')}?key=${CFG.API_KEY}`;
+  const r = await fetch(url);
+  if (!r.ok) return [];
+  const d = await r.json();
+  if (!d.values || d.values.length < 2) return [];
+  const [h, ...rows] = d.values;
+  return rows.map(row => { const o = {}; h.forEach((k,i) => o[k] = row[i]||''); return o; });
+}
+
 async function sheetsGetById(id) {
   const all = await sheetsGetAll();
   return all.find(d => d.id === id) || null;
