@@ -139,6 +139,23 @@ textarea{resize:vertical;min-height:72px}
 .cc-name{font-weight:700;font-size:14px}
 .cc-role{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px}
 .cc-tel{font-size:13px;color:var(--g);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:6px}
+.equipe-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.equipe-item{display:flex;align-items:center;gap:11px;background:#fafaf8;border:1px solid var(--mid);border-radius:9px;padding:10px 13px}
+.equipe-av{width:32px;height:32px;border-radius:50%;background:var(--mut2);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+.equipe-nom{font-size:13px;font-weight:700}
+.equipe-role{font-size:11.5px;color:var(--mut);margin-top:1px}
+.creneau-item{display:flex;align-items:center;gap:14px;background:white;border:1px solid var(--mid);border-radius:10px;padding:13px 16px;margin-bottom:8px}
+.creneau-item.creneau-pris{background:#fafaf8;opacity:.75}
+.creneau-date-jour{font-size:13px;font-weight:700}
+.creneau-date-heure{font-size:12px;color:var(--mut);margin-top:1px}
+.creneau-statut{margin-left:auto;font-size:11px;font-weight:700;padding:4px 11px;border-radius:14px;white-space:nowrap}
+.creneau-statut.libre{background:var(--gl);color:var(--gd)}
+.creneau-statut.pris{background:#f0f0ec;color:var(--mut)}
+.creneau-client-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-top:13px}
+.creneau-client-btn{display:flex;flex-direction:column;gap:4px;background:#fafaf8;border:1.5px solid var(--mid);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;transition:all .15s}
+.creneau-client-btn:hover{border-color:var(--g);background:var(--gx);transform:translateY(-1px)}
+.creneau-client-date{font-size:12.5px;font-weight:700}
+.creneau-client-heure{font-size:11.5px;color:var(--mut)}
 /* CARDS GENERIQUES */
 .sc{background:white;border-radius:11px;border:1px solid var(--mid);padding:19px 20px;margin-top:14px}
 .ss{display:flex;align-items:center;gap:11px;padding:13px 16px;border-radius:9px;font-size:13px;font-weight:600}
@@ -172,6 +189,21 @@ textarea{resize:vertical;min-height:72px}
 .prix-evo{display:flex;flex-direction:column;gap:7px}
 .prix-evo-row{display:flex;justify-content:space-between;font-size:13px}
 .prix-evo-final{font-weight:700;color:var(--gd);font-size:15px}
+.tarif-total{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:14px;margin-bottom:4px;border-bottom:1px solid #f0f0ec}
+.tarif-total-label{font-size:13px;color:var(--mut);font-weight:600}
+.tarif-total-val{font-size:22px;font-weight:800;color:var(--gd)}
+.tarif-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:none;padding:11px 0 4px;font-size:12.5px;font-weight:600;color:var(--mut);cursor:pointer}
+.tarif-toggle:hover{color:var(--gd)}
+.tarif-toggle span:last-child{transition:transform .2s}
+#tarif-detail{margin-top:10px;display:flex;flex-direction:column;gap:12px}
+.tarif-row{display:flex;align-items:center;gap:12px}
+.tarif-row-ic{width:32px;height:32px;border-radius:8px;background:#f0f0ec;color:var(--mut);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tarif-row-body{flex:1;min-width:0}
+.tarif-row-label{font-size:12px;font-weight:600;color:var(--mut);margin-bottom:5px}
+.tarif-row-bar{height:6px;background:#f0f0ec;border-radius:3px;overflow:hidden}
+.tarif-row-fill{height:100%;background:var(--g);border-radius:3px}
+.tarif-row-fill-pose{background:#7fa9d8}
+.tarif-row-val{font-size:14px;font-weight:700;flex-shrink:0;min-width:70px;text-align:right}
 /* PROMO / ALERT */
 .promo-box{display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,var(--gl),var(--gx));border:1.5px dashed var(--g);border-radius:10px;padding:13px 16px}
 .promo-title{font-size:13px;font-weight:700;color:var(--gd)}
@@ -251,6 +283,7 @@ textarea{resize:vertical;min-height:72px}
     <div style="display:flex;gap:8px">
       <button class="btn btn-p btn-sm" onclick="showTab('new')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau</button>
       <button class="btn btn-o btn-sm" onclick="openCatalogueView()">Catalogue</button>
+      <button class="btn btn-o btn-sm" onclick="openCreneauxView()">Créneaux</button>
       <button class="btn btn-o btn-sm" onclick="loadAll()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button class="btn btn-o btn-sm" onclick="doLogout()">Déconnexion</button>
     </div>
@@ -330,6 +363,12 @@ textarea{resize:vertical;min-height:72px}
       <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeCatalogueView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
     </div>
   </div>
+  <div id="vCreneaux" style="display:none">
+    <div id="creneauxCont"></div>
+    <div class="page" style="padding-top:0">
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeCreneauxView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
+    </div>
+  </div>
 </div>
 
 <!-- CLIENT -->
@@ -351,6 +390,7 @@ textarea{resize:vertical;min-height:72px}
 <script src="js/sheets.js"></script>
 <script src="js/pdf.js"></script>
 <script src="js/catalogue.js"></script>
+<script src="js/creneaux.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/client.js"></script>
 <script src="js/main.js"></script>
