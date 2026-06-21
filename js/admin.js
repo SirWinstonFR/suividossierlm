@@ -175,104 +175,6 @@ function renderDetail() {
     `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${icon(s.ic,14)} ${s.l}</button>`
   ).join('');
 
-  const dateFields = `
-    <div class="ic">
-      <div class="ict">Dates clés</div>
-      <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
-    </div>`;
-
-  const docsBloc = `
-    <div class="ic">
-      <div class="ict">Documents à transmettre</div>
-      <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Bon de commande à signer (Drive)</label><input id="commande-url" type="url" placeholder="https://drive.google.com/file/d/.../view" value="${d.commande_url||''}"></div>
-      <div style="font-size:11px;color:var(--mut);margin:-4px 0 8px">⚠️ Le fichier Drive doit être partagé en "Lecture pour toute personne disposant du lien"</div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
-      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
-    </div>`;
-
-  // Lien Drive du client — créé automatiquement à la création du dossier, verrouillé
-  const driveBloc = `
-    <div class="ic">
-      <div class="ict">Espace Drive client</div>
-      ${d.drive_url
-        ? `<div class="drive-locked" onclick="window.open('${d.drive_url}','_blank')">
-             ${icon('link',15)}
-             <span class="drive-locked-text">${d.drive_url}</span>
-           </div>
-           <div style="font-size:11px;color:var(--mut);margin-top:8px">${icon('check',11)} Dossier créé automatiquement — non modifiable</div>`
-        : `<div class="drive-locked drive-locked-pending">
-             ${icon('loader',15)}
-             <span class="drive-locked-text">Création du dossier en cours...</span>
-           </div>
-           <div style="font-size:11px;color:var(--mut);margin-top:8px">Actualisez la page dans quelques secondes</div>`
-      }
-      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés ici.</div>
-    </div>`;
-
-  // Message personnalisé du conseiller, visible par le client
-  const messageBloc = `
-    <div class="ic">
-      <div class="ict">Message pour le client</div>
-      <div class="fg" style="margin-bottom:8px">
-        <textarea id="message-client" placeholder="Ex: Bonjour, votre commande avance bien, n'hésitez pas à me contacter si besoin." style="min-height:70px">${d.message_client||''}</textarea>
-      </div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveMessageClient('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-      <div style="font-size:11px;color:var(--mut);margin-top:8px">Ce message s'affiche directement sur la page de suivi du client.</div>
-    </div>`;
-
-  const techBloc = `
-    <div class="ic">
-      <div class="ict">Détails techniques</div>
-      <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-    </div>`;
-
-  // Délai de fabrication — saisi en semaines, date estimée calculée automatiquement
-  const delaiBloc = `
-    <div class="ic">
-      <div class="ict">Délai de fabrication</div>
-      <div class="fg" style="margin-bottom:8px">
-        <label>Durée (en semaines)</label>
-        <input id="delai-semaines" type="number" min="0" placeholder="ex: 6" value="${d.delai_fab_semaines||''}">
-      </div>
-      ${d.date6 && d.delai_fab_semaines ? `<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">${icon('calendar',13)} Livraison estimée : ${computeDateEstimee(d.date6, d.delai_fab_semaines)}</div>` : ''}
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDelai('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-      <div style="font-size:11px;color:var(--mut);margin-top:8px">Calculé à partir de la date de confirmation de commande.</div>
-    </div>`;
-
-  // Promo / éco-PTZ — éco-PTZ ajoutable ici, plus tard dans le parcours (pas à la création)
-  const avantagesBloc = `
-    <div class="ic">
-      <div class="ict">Avantages client</div>
-      <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
-      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://... (à ajouter quand disponible)" value="${d.ecoptz_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-    </div>`;
-
-  const pluBloc = `
-    <div class="ic">
-      <div class="ict">Démarche administrative (PLU)</div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
-        <input type="checkbox" id="plu-check" ${d.plu_concerne==='true'?'checked':''} style="width:16px;height:16px">
-        Projet soumis à déclaration / PLU
-      </label>
-      <div class="fg" style="margin-bottom:8px"><label>Adresse du projet</label><input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris" value="${d.plu_adresse||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-    </div>`;
-
-  const transpBloc = `
-    <div class="ic">
-      <div class="ict">Livraison</div>
-      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
-    </div>`;
-
   document.getElementById('detailCont').innerHTML = `
     <div style="background:white;border-radius:8px;border:1px solid var(--mid);padding:20px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
       <div>
@@ -290,39 +192,187 @@ function renderDetail() {
         <div style="font-size:12px;margin-top:6px;color:${d.signe==='true'?'var(--gd)':'#e65100'}">${d.signe==='true'?icon('check',12)+' Signé le '+d.sig_date:icon('clock',12)+' En attente de signature'}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
-      <div>
-        <div class="ic"><div class="ict">Avancement</div><div class="atl">${tl}</div></div>
-      </div>
+
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
+
       <div>
         <div class="ic"><div class="ict">Changer l'étape</div><div class="step-sel">${sbts}</div></div>
-        ${dateFields}
-        ${messageBloc}
-        ${docsBloc}
-        ${driveBloc}
-        ${techBloc}
-        ${delaiBloc}
-        ${avantagesBloc}
-        ${pluBloc}
-        ${transpBloc}
         <div class="ic">
-          <div class="ict">Informations</div>
-          <div class="ir"><span style="color:var(--mut)">Conseiller</span><span style="font-weight:600">${d.conseiller||'—'}</span></div>
-          <div class="ir"><span style="color:var(--mut)">Tél.</span><span style="font-weight:600">${d.tel_conseiller||'—'}</span></div>
-          <div class="ir"><span style="color:var(--mut)">Gamme</span><span style="font-weight:600">${d.gamme||'—'}</span></div>
-          <div class="ir"><span style="color:var(--mut)">Estimatif</span><span style="font-weight:600">${d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+' €':'—'}</span></div>
-          <div class="ir"><span style="color:var(--mut)">Prix final</span><span style="font-weight:600;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</span></div>
-          ${d.notes?`<div style="margin-top:8px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">${d.notes}</div>`:''}
-        </div>
-        <div class="ic">
-          <div class="ict">Lien client</div>
-          <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
-          <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
-          <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Préparer l'email de suivi</button>
-          ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre votre logiciel mail avec le message pré-rempli.</div>`:''}
-          ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
+          <div class="ict">Avancement</div>
+          <div class="atl">${tl}</div>
         </div>
       </div>
+
+      <div>
+        <div class="dtab-bar">
+          <button class="dtab active" onclick="switchDetailTab(event,'tab-suivi')">${icon('calendar',13)} Suivi</button>
+          <button class="dtab" onclick="switchDetailTab(event,'tab-docs')">${icon('filetext',13)} Documents</button>
+          <button class="dtab" onclick="switchDetailTab(event,'tab-projet')">${icon('ruler',13)} Projet</button>
+          <button class="dtab" onclick="switchDetailTab(event,'tab-avantages')">${icon('discount',13)} Avantages</button>
+          <button class="dtab" onclick="switchDetailTab(event,'tab-contact')">${icon('link',13)} Contact & lien</button>
+        </div>
+
+        <div id="tab-suivi" class="dtab-panel">
+          ${renderDateFields(d)}
+          ${renderMessageBloc(d)}
+        </div>
+
+        <div id="tab-docs" class="dtab-panel" style="display:none">
+          ${renderDocsBloc(d)}
+          ${renderDriveBloc(d)}
+        </div>
+
+        <div id="tab-projet" class="dtab-panel" style="display:none">
+          ${renderTechBloc(d)}
+          ${renderDelaiBloc(d)}
+          ${renderTranspBloc(d)}
+        </div>
+
+        <div id="tab-avantages" class="dtab-panel" style="display:none">
+          ${renderAvantagesBloc(d)}
+          ${renderPluBloc(d)}
+        </div>
+
+        <div id="tab-contact" class="dtab-panel" style="display:none">
+          <div class="ic">
+            <div class="ict">Informations</div>
+            <div class="ir"><span style="color:var(--mut)">Conseiller</span><span style="font-weight:600">${d.conseiller||'—'}</span></div>
+            <div class="ir"><span style="color:var(--mut)">Tél.</span><span style="font-weight:600">${d.tel_conseiller||'—'}</span></div>
+            <div class="ir"><span style="color:var(--mut)">Gamme</span><span style="font-weight:600">${d.gamme||'—'}</span></div>
+            <div class="ir"><span style="color:var(--mut)">Estimatif</span><span style="font-weight:600">${d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+' €':'—'}</span></div>
+            <div class="ir"><span style="color:var(--mut)">Prix final</span><span style="font-weight:600;color:var(--gd)">${d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':'—'}</span></div>
+            ${d.notes?`<div style="margin-top:8px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">${d.notes}</div>`:''}
+          </div>
+          <div class="ic">
+            <div class="ict">Lien client</div>
+            <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
+            <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
+            <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Préparer l'email de suivi</button>
+            ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre votre logiciel mail avec le message pré-rempli.</div>`:''}
+            ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+}
+
+function switchDetailTab(evt, tabId) {
+  document.querySelectorAll('.dtab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.dtab').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).style.display = 'block';
+  evt.currentTarget.classList.add('active');
+}
+
+function renderDateFields(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Dates clés</div>
+      <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
+    </div>`;
+}
+
+function renderMessageBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Message pour le client</div>
+      <div class="fg" style="margin-bottom:8px">
+        <textarea id="message-client" placeholder="Ex: Bonjour, votre commande avance bien, n'hésitez pas à me contacter si besoin." style="min-height:70px">${d.message_client||''}</textarea>
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveMessageClient('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Ce message s'affiche directement sur la page de suivi du client.</div>
+    </div>`;
+}
+
+function renderDocsBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Documents à transmettre</div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Bon de commande à signer (Drive)</label><input id="commande-url" type="url" placeholder="https://drive.google.com/file/d/.../view" value="${d.commande_url||''}"></div>
+      <div style="font-size:11px;color:var(--mut);margin:-4px 0 8px">${icon('alert',11)} Le fichier Drive doit être partagé en "Lecture pour toute personne disposant du lien"</div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
+      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
+    </div>`;
+}
+
+function renderDriveBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Espace Drive client</div>
+      ${d.drive_url
+        ? `<div class="drive-locked" onclick="window.open('${d.drive_url}','_blank')">
+             ${icon('link',15)}
+             <span class="drive-locked-text">${d.drive_url}</span>
+           </div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">${icon('check',11)} Dossier créé automatiquement — non modifiable</div>`
+        : `<div class="drive-locked drive-locked-pending">
+             ${icon('loader',15)}
+             <span class="drive-locked-text">Création du dossier en cours...</span>
+           </div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">Actualisez la page dans quelques secondes</div>`
+      }
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés par le client sont automatiquement déposés ici.</div>
+    </div>`;
+}
+
+function renderTechBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Détails techniques</div>
+      <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderDelaiBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Délai de fabrication</div>
+      <div class="fg" style="margin-bottom:8px">
+        <label>Durée (en semaines)</label>
+        <input id="delai-semaines" type="number" min="0" placeholder="ex: 6" value="${d.delai_fab_semaines||''}">
+      </div>
+      ${d.date6 && d.delai_fab_semaines ? `<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">${icon('calendar',13)} Livraison estimée : ${computeDateEstimee(d.date6, d.delai_fab_semaines)}</div>` : ''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDelai('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Calculé à partir de la date de confirmation de commande.</div>
+    </div>`;
+}
+
+function renderTranspBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Livraison</div>
+      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderAvantagesBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Avantages client</div>
+      <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://... (à ajouter quand disponible)" value="${d.ecoptz_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderPluBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Démarche administrative (PLU)</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="plu-check" ${d.plu_concerne==='true'?'checked':''} style="width:16px;height:16px">
+        Projet soumis à déclaration / PLU
+      </label>
+      <div class="fg" style="margin-bottom:8px"><label>Adresse du projet</label><input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris" value="${d.plu_adresse||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 }
 
