@@ -39,6 +39,13 @@ svg{display:inline-block}
 /* ADMIN */
 .page{padding:24px;max-width:1100px;margin:0 auto}
 .tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:1.5px solid var(--mid)}
+.newtype-bar{display:flex;gap:8px;margin-bottom:16px}
+.newtype-btn{flex:1;padding:11px;border-radius:9px;border:1.5px solid var(--mid);background:white;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--mut);transition:all .15s}
+.newtype-btn:hover{border-color:var(--g);color:var(--gd)}
+.newtype-btn.active{background:var(--g);border-color:var(--g);color:white}
+.type-tag{display:inline-block;font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px}
+.type-tag-pose{background:var(--gl);color:var(--gd)}
+.type-tag-sav{background:#fde4d6;color:#b5470a}
 .tab{padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .15s}
 .tab.active{color:var(--g);border-bottom-color:var(--g)}
 .dos-grid{display:flex;flex-direction:column;gap:9px}
@@ -315,13 +322,20 @@ textarea{resize:vertical;min-height:72px}
       <div style="font-size:13px;color:var(--mut);margin-bottom:20px">Gérez vos clients et partagez leur lien de suivi.</div>
       <div class="tab-bar">
         <button class="tab active" onclick="filterTab('tous',this)">Tous</button>
+        <button class="tab" onclick="filterTab('pose',this)">Pose</button>
+        <button class="tab" onclick="filterTab('sav',this)">SAV</button>
         <button class="tab" onclick="filterTab('cours',this)">En cours</button>
         <button class="tab" onclick="filterTab('fin',this)">Terminés</button>
       </div>
       <div id="listeDos" class="dos-grid"></div>
       <div id="formNew" style="display:none;margin-top:20px">
-        <div class="form-card">
-          <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau dossier</div>
+        <div class="newtype-bar">
+          <button id="newTypePose" class="newtype-btn active" onclick="switchNewType('pose')">${typeof icon==='function'?icon('home',15):''} Dossier Pose</button>
+          <button id="newTypeSav" class="newtype-btn" onclick="switchNewType('sav')">${typeof icon==='function'?icon('alert',15):''} Dossier SAV</button>
+        </div>
+
+        <div id="formNewPose" class="form-card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau dossier Pose</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div class="fg">
               <label>N° de devis / dossier</label>
@@ -366,7 +380,30 @@ textarea{resize:vertical;min-height:72px}
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
-            <button class="btn btn-p" onclick="creerDos()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier</button>
+            <button class="btn btn-p" onclick="creerDosPose()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier</button>
+          </div>
+        </div>
+
+        <div id="formNewSav" class="form-card" style="display:none">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau dossier SAV</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="fg">
+              <label>N° de dossier SAV</label>
+              <input id="sid" placeholder="ex: SAV-360150" onblur="checkSavId()">
+              <div id="sid-msg" style="font-size:11px;min-height:14px"></div>
+            </div>
+            <div class="fg"><label>Nom client</label><input id="snom" placeholder="Jean Dupont"></div>
+            <div class="fg" style="grid-column:1/-1"><label>Motif du SAV</label><textarea id="smotif" placeholder="Ex: Fenêtre mal posée, joint défectueux..."></textarea></div>
+            <div class="fg"><label>Produit concerné</label><input id="sproduit" placeholder="ex: Fenêtre PVC K-Line Confort 70"></div>
+            <div class="fg"><label>Téléphone</label><input id="stel" placeholder="06 xx xx xx xx"></div>
+            <div class="fg"><label>Email</label><input id="seml" type="email" placeholder="client@mail.fr"></div>
+            <div class="fg"><label>Conseiller</label><input id="scon" placeholder="Sophie Leclerc"></div>
+            <div class="fg"><label>Tél. conseiller</label><input id="stlc" placeholder="03 xx xx xx xx"></div>
+            <div class="fg" style="grid-column:1/-1"><label>Notes</label><textarea id="snot" placeholder="Notes..."></textarea></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
+            <button class="btn btn-p" onclick="creerDosSav()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier SAV</button>
           </div>
         </div>
       </div>
@@ -420,6 +457,7 @@ textarea{resize:vertical;min-height:72px}
 <script src="js/creneaux.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/client.js"></script>
+<script src="js/sav.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
