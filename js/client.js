@@ -208,18 +208,49 @@ function renderClient(d) {
     </div>` : '';
 
   // === PLU / Adresse + mini-carte ===
-  const pluBloc = d.plu_concerne === 'true' ? `
+  // === SECTION ADMINISTRATIF — PLU + Financement (gauche) / Carte adresse (droite) ===
+  const pluConcerne = d.plu_concerne === 'true';
+  const hasFinancementInfo = d.financement_ptz === 'true' || d.financement_conseil;
+  const showAdminSection = pluConcerne || hasFinancementInfo;
+
+  const pluStatutLabel = { en_attente: 'En attente de dépôt', depose: 'Déposé en mairie', valide: 'Validé' };
+  const pluStatutClass = { en_attente: 'plu-statut-attente', depose: 'plu-statut-depose', valide: 'plu-statut-valide' };
+
+  const pluBloc = showAdminSection ? `
     <div class="sc">
-      <div class="ict">Démarche administrative</div>
-      <div class="alert-box">
-        ${icon('alert',18)}
-        <div>
-          <div class="alert-title">Votre projet est soumis à déclaration (PLU)</div>
-          <div class="alert-sub">Une démarche administrative préalable est nécessaire avant le début des travaux. Votre conseiller vous accompagne dans cette étape.</div>
+      <div class="ict">Administratif</div>
+      <div class="admin-grid">
+        <div class="admin-col">
+
+          ${pluConcerne ? `
+            <div class="admin-block">
+              <div class="admin-block-title">${icon('alert',15)} Déclaration PLU</div>
+              <div class="admin-block-text">Votre projet est soumis à déclaration préalable. Une démarche administrative est nécessaire avant le début des travaux.</div>
+              ${d.plu_statut ? `<span class="plu-statut-pill ${pluStatutClass[d.plu_statut]||''}">${pluStatutLabel[d.plu_statut]||d.plu_statut}</span>` : ''}
+              ${d.plu_doc_url ? `<button class="fiche-btn" style="margin-top:10px" onclick="openLink('${d.plu_doc_url}')">
+                <span class="fiche-btn-ic">${icon('filetext',16)}</span>
+                <span class="fiche-btn-text">
+                  <span class="fiche-btn-title">Document déposé</span>
+                  <span class="fiche-btn-sub">Consulter le dossier d'urbanisme</span>
+                </span>
+                <span class="fiche-btn-arrow">${icon('arrowright',15)}</span>
+              </button>` : ''}
+            </div>` : ''}
+
+          ${hasFinancementInfo ? `
+            <div class="admin-block" ${pluConcerne?'style="margin-top:16px"':''}>
+              <div class="admin-block-title">${icon('bank',15)} Financement</div>
+              ${d.financement_ptz==='true' ? `<div class="ptz-pill">${icon('discount',13)} Éco-PTZ envisagé</div>` : ''}
+              ${d.financement_conseil ? `<div class="admin-block-text" ${d.financement_ptz==='true'?'style="margin-top:9px"':''}>${d.financement_conseil}</div>` : ''}
+            </div>` : ''}
+
         </div>
+        ${pluConcerne && d.plu_adresse ? `
+        <div class="admin-col">
+          <div id="plu-map" class="plu-map"></div>
+          <div class="plu-addr">${icon('pin',13)} ${d.plu_adresse}</div>
+        </div>` : ''}
       </div>
-      ${d.plu_adresse ? `<div id="plu-map" class="plu-map"></div>
-      <div class="plu-addr">${icon('pin',13)} ${d.plu_adresse}</div>` : ''}
     </div>` : '';
 
   // === DEVIS PDF ===

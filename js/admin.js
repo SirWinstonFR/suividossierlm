@@ -107,6 +107,7 @@ async function creerDos() {
     delai_fab_semaines: '',
     message_client: '',
     equipe: '', prix_produit: '', prix_pose: '',
+    plu_statut: '', plu_doc_url: '', financement_ptz: '', financement_conseil: '',
     date1: new Date().toLocaleDateString('fr-FR'),
     date2:'',date3:'',date4:'',date5:'',date6:'',date7:'',date8:'',
     signe:'false', sig_date:'', sig_data:'', signe_pose:'false',
@@ -235,6 +236,7 @@ function renderDetail() {
         <div id="tab-avantages" class="dtab-panel" style="display:none">
           ${renderAvantagesBloc(d)}
           ${renderPluBloc(d)}
+          ${renderFinancementBloc(d)}
         </div>
 
         <div id="tab-contact" class="dtab-panel" style="display:none">
@@ -396,7 +398,34 @@ function renderPluBloc(d) {
         Projet soumis à déclaration / PLU
       </label>
       <div class="fg" style="margin-bottom:8px"><label>Adresse du projet</label><input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris" value="${d.plu_adresse||''}"></div>
+      <div class="fg" style="margin-bottom:8px">
+        <label>Statut du dossier d'urbanisme</label>
+        <select id="plu-statut" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px">
+          <option value="" ${!d.plu_statut?'selected':''}>— Non renseigné —</option>
+          <option value="en_attente" ${d.plu_statut==='en_attente'?'selected':''}>En attente de dépôt</option>
+          <option value="depose" ${d.plu_statut==='depose'?'selected':''}>Déposé en mairie</option>
+          <option value="valide" ${d.plu_statut==='valide'?'selected':''}>Validé</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien du document déposé (Drive)</label><input id="plu-doc-url" type="url" placeholder="https://drive.google.com/..." value="${d.plu_doc_url||''}"></div>
       <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderFinancementBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Financement</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="ptz-check" ${d.financement_ptz==='true'?'checked':''} style="width:16px;height:16px">
+        Le client envisage un financement éco-PTZ
+      </label>
+      <div class="fg" style="margin-bottom:8px">
+        <label>Conseil de paiement (selon montant)</label>
+        <textarea id="financement-conseil" placeholder="Ex: Pour un montant de cet ordre, nous recommandons l'ouverture d'un compte dédié ou un virement échelonné..." style="min-height:70px">${d.financement_conseil||''}</textarea>
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveFinancement('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Affiché dans la section Administratif, côté client.</div>
     </div>`;
 }
 
@@ -512,10 +541,25 @@ async function savePlu(id) {
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
   const checked = document.getElementById('plu-check').checked;
   const adresse = document.getElementById('plu-adresse').value.trim();
+  const statut = document.getElementById('plu-statut').value;
+  const docUrl = document.getElementById('plu-doc-url').value.trim();
   d.plu_concerne = String(checked);
   d.plu_adresse = adresse;
-  await sheetsWrite('update', { id, fields:{ plu_concerne:String(checked), plu_adresse:adresse } });
+  d.plu_statut = statut;
+  d.plu_doc_url = docUrl;
+  await sheetsWrite('update', { id, fields:{ plu_concerne:String(checked), plu_adresse:adresse, plu_statut:statut, plu_doc_url:docUrl } });
   showToast('✓ Info PLU enregistrée');
+  renderDetail();
+}
+
+async function saveFinancement(id) {
+  const d = _dossiers.find(x=>x.id===id); if (!d) return;
+  const ptz = document.getElementById('ptz-check').checked;
+  const conseil = document.getElementById('financement-conseil').value.trim();
+  d.financement_ptz = String(ptz);
+  d.financement_conseil = conseil;
+  await sheetsWrite('update', { id, fields:{ financement_ptz:String(ptz), financement_conseil:conseil } });
+  showToast('✓ Financement enregistré');
   renderDetail();
 }
 
