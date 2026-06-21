@@ -252,7 +252,7 @@ function renderDetail() {
             <div style="font-family:monospace;font-size:11px;color:var(--gd);background:var(--gx);border:1px dashed var(--g);padding:10px;border-radius:6px;word-break:break-all;margin-bottom:8px">${lien}</div>
             <button class="btn btn-p" style="width:100%;margin-bottom:8px" onclick="copyLien('${d.token}')">${icon('copy',14)} Copier le lien client</button>
             <button class="btn btn-o" style="width:100%;border-color:var(--mid);color:var(--mut)" onclick="sendStatusEmail('${d.id}')" ${!d.email?'disabled title="Aucun email renseigné"':''}>${icon('mail',14)} Préparer l'email de suivi</button>
-            ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre votre logiciel mail avec le message pré-rempli.</div>`:''}
+            ${d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Ouvre Gmail dans un nouvel onglet, message pré-rempli.</div>`:''}
             ${!d.email?`<div style="font-size:11px;color:var(--mut);margin-top:6px">Renseignez l'email du client pour activer l'envoi.</div>`:''}
           </div>
           <div class="ic">
@@ -544,8 +544,9 @@ function sendStatusEmail(id) {
   corps += `Vous pouvez suivre l'avancement de votre projet à tout moment ici :\n${lienSuivi}\n\n`;
   corps += `Cordialement,\n${d.conseiller || 'Votre conseiller Leroy Merlin'}`;
 
-  const mailtoUrl = `mailto:${encodeURIComponent(d.email)}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
-  window.location.href = mailtoUrl;
+  // Ouvre directement l'interface de composition Gmail (web), plutôt qu'un client mail natif
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(d.email)}&su=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+  window.open(gmailUrl, '_blank');
 }
 
 function copyLien(token) {
