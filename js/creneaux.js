@@ -145,3 +145,64 @@ async function reserverCreneau(creneauId, dossierId) {
     if (d) renderClient(d);
   }, 800);
 }
+
+// === RDV À REPORTER SUR L'AGENDA PRO ===
+function rdvAReporter() {
+  return _creneaux.filter(c => c.statut === 'pris' && c.report_pro !== 'oui')
+    .sort((a,b) => (toSortableDate(a.date)+a.heure_debut).localeCompare(toSortableDate(b.date)+b.heure_debut));
+}
+
+function renderRdvBadge() {
+  const n = rdvAReporter().length;
+  const el = document.getElementById('rdv-badge');
+  if (!el) return;
+  el.style.display = n > 0 ? 'flex' : 'none';
+  el.textContent = n;
+}
+
+async function openRdvAReporterView() {
+  document.getElementById('vListe').style.display = 'none';
+  document.getElementById('vDetail').style.display = 'none';
+  document.getElementById('vCatalogue').style.display = 'none';
+  document.getElementById('vCreneaux').style.display = 'none';
+  document.getElementById('vRdvReporter').style.display = 'block';
+  await loadCreneaux();
+  renderRdvAReporterView();
+}
+function closeRdvAReporterView() {
+  document.getElementById('vRdvReporter').style.display = 'none';
+  document.getElementById('vListe').style.display = 'block';
+  renderRdvBadge();
+}
+
+function renderRdvAReporterView() {
+  const liste = rdvAReporter();
+  document.getElementById('rdvReporterCont').innerHTML = `
+    <div class="page" style="max-width:700px">
+      <div style="margin-bottom:20px">
+        <div style="font-size:22px;font-weight:700">RDV à reporter sur votre agenda pro</div>
+        <div style="font-size:13px;color:var(--mut);margin-top:4px">Ces rendez-vous ont été pris par des clients et ajoutés à votre agenda perso. Reportez-les manuellement sur le pro, puis marquez-les comme traités.</div>
+      </div>
+      ${!liste.length
+        ? `<div style="color:var(--mut2);padding:40px 0;text-align:center">${icon('check',22)}<div style="margin-top:8px">Aucun RDV en attente de report — tout est à jour.</div></div>`
+        : liste.map(c => `
+          <div class="rdv-report-item">
+            <div class="rdv-report-ic">${icon('calendar',18)}</div>
+            <div class="rdv-report-body">
+              <div class="rdv-report-date">${c.date} · ${c.heure_debut} — ${c.heure_fin}</div>
+              <div class="rdv-report-client">${c.nom_client||'Client'} · Dossier ${c.dossier_id}</div>
+            </div>
+            <button class="btn btn-p btn-sm" onclick="marquerReporte('${c.id}')">${icon('check',13)} Reporté</button>
+          </div>`).join('')
+      }
+    </div>`;
+}
+
+async function marquerReporte(creneauId) {
+  await sheetsWrite('creneauMarquerReporte', { id: creneauId });
+  const c = _creneaux.find(x => x.id === creneauId);
+  if (c) c.report_pro = 'oui';
+  renderRdvAReporterView();
+  renderRdvBadge();
+  showToast('✓ Marqué comme reporté');
+}

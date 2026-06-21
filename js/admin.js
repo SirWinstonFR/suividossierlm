@@ -22,6 +22,7 @@ async function loadAll() {
   await loadCatalogue();
   await loadCreneaux();
   populateGammeSelect();
+  renderRdvBadge();
   document.getElementById('lbar').style.display = 'none';
   renderListe();
 }
