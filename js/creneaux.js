@@ -45,33 +45,82 @@ function showCreneauForm() {
   document.getElementById('creneauFormZone').style.display = 'block';
   document.getElementById('creneauFormZone').innerHTML = `
     <div class="form-card">
-      <div style="font-size:14px;font-weight:700;margin-bottom:14px">Nouveau créneau</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">Générer des créneaux</div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:14px">Créneaux de 30 min, avec 15 min de pause entre chaque, jusqu'à l'heure de fin.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        <div class="fg"><label>Date</label><input id="cr-date" type="date"></div>
-        <div class="fg"><label>Heure début</label><input id="cr-debut" type="time" value="09:00"></div>
-        <div class="fg"><label>Heure fin</label><input id="cr-fin" type="time" value="10:00"></div>
+        <div class="fg"><label>Date</label><input id="cr-date" type="date" onchange="previewCreneaux()"></div>
+        <div class="fg"><label>Heure début</label><input id="cr-debut" type="time" value="09:00" onchange="previewCreneaux()"></div>
+        <div class="fg"><label>Heure fin</label><input id="cr-fin" type="time" value="18:00" onchange="previewCreneaux()"></div>
       </div>
+      <div id="creneau-preview" style="margin-top:14px"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
         <button class="btn btn-d btn-sm" onclick="document.getElementById('creneauFormZone').style.display='none'">Annuler</button>
-        <button class="btn btn-p btn-sm" onclick="saveCreneau()">${icon('check',13)} Ajouter</button>
+        <button class="btn btn-p btn-sm" onclick="saveCreneauxBatch()">${icon('check',13)} Générer les créneaux</button>
       </div>
+    </div>`;
+  previewCreneaux();
+}
+
+// Calcule la liste des créneaux de 30min + 15min de pause entre une heure de début et de fin
+function computeCreneauxSlots(debut, fin) {
+  const slots = [];
+  const [hD,mD] = debut.split(':').map(Number);
+  const [hF,mF] = fin.split(':').map(Number);
+  let cursor = hD*60 + mD;
+  const limite = hF*60 + mF;
+  while (cursor + 30 <= limite) {
+    const start = cursor;
+    const end = cursor + 30;
+    slots.push({
+      debut: `${String(Math.floor(start/60)).padStart(2,'0')}:${String(start%60).padStart(2,'0')}`,
+      fin:   `${String(Math.floor(end/60)).padStart(2,'0')}:${String(end%60).padStart(2,'0')}`
+    });
+    cursor = end + 15; // pause de 15 min
+  }
+  return slots;
+}
+
+function previewCreneaux() {
+  const debut = document.getElementById('cr-debut')?.value;
+  const fin = document.getElementById('cr-fin')?.value;
+  const el = document.getElementById('creneau-preview');
+  if (!el || !debut || !fin) return;
+  const slots = computeCreneauxSlots(debut, fin);
+  if (!slots.length) { el.innerHTML = `<div style="font-size:12px;color:#c0392b">Plage trop courte pour générer un créneau.</div>`; return; }
+  el.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px">${slots.length} créneau${slots.length>1?'x':''} seront créés</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${slots.map(s => `<span style="background:var(--gx);color:var(--gd);font-size:11px;font-weight:600;padding:4px 9px;border-radius:12px">${s.debut}–${s.fin}</span>`).join('')}
     </div>`;
 }
 
-async function saveCreneau() {
+async function saveCreneauxBatch() {
   const date = document.getElementById('cr-date').value;
   const debut = document.getElementById('cr-debut').value;
   const fin = document.getElementById('cr-fin').value;
   if (!date || !debut || !fin) { showToast('Tous les champs sont requis'); return; }
 
+  const slots = computeCreneauxSlots(debut, fin);
+  if (!slots.length) { showToast('Plage trop courte pour générer un créneau'); return; }
+
   const [a,m,j] = date.split('-');
   const dateFr = `${j}/${m}/${a}`;
 
-  await sheetsWrite('creneauAdd', { date: dateFr, heure_debut: debut, heure_fin: fin });
+  const btn = document.querySelector('#creneauFormZone .btn-p');
+  if (btn) { btn.disabled = true; btn.innerHTML = icon('loader',13) + ' Génération...'; }
+
+  await sheetsWrite('creneauAddBatch', {
+    date: dateFr,
+    slots: slots.map(s => ({ heure_debut: s.debut, heure_fin: s.fin }))
+  });
+
+  // L'écriture Apps Script (no-cors) n'est pas garantie terminée immédiatement après l'appel ;
+  // on laisse un court délai avant de relire le Sheet pour être sûr de récupérer les nouveaux créneaux.
+  await new Promise(r => setTimeout(r, 1200));
   await loadCreneaux();
   document.getElementById('creneauFormZone').style.display = 'none';
   renderCreneauxList();
-  showToast('✓ Créneau ajouté');
+  showToast(`✓ ${slots.length} créneau${slots.length>1?'x':''} créé${slots.length>1?'s':''}`);
 }
 
 function renderCreneauxList() {
