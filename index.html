@@ -235,7 +235,12 @@ textarea{resize:vertical;min-height:72px}
 @media(max-width:560px){.admin-grid{grid-template-columns:1fr}}
 .alert-title{font-weight:700;font-size:13px}
 .alert-sub{font-size:12px;margin-top:4px;opacity:.85;line-height:1.5}
-.plu-map{margin-top:11px;height:160px;border-radius:9px;overflow:hidden;border:1px solid var(--mid)}
+.plu-map{margin-top:11px;height:200px;border-radius:10px;overflow:hidden;border:1px solid var(--mid);background:#f0f0ec}
+.addr-suggestions{position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--g);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.1);z-index:200;max-height:220px;overflow-y:auto;margin-top:3px}
+.addr-item{display:flex;align-items:flex-start;gap:8px;padding:10px 13px;cursor:pointer;font-size:12.5px;color:#333;border-bottom:1px solid #f5f5f3;line-height:1.4;transition:background .1s}
+.addr-item:last-child{border:none}
+.addr-item:hover{background:var(--gx);color:var(--gd)}
+.addr-item svg{flex-shrink:0;margin-top:2px;color:var(--g)}
 .plu-addr{font-size:12px;color:var(--mut);margin-top:7px;display:flex;align-items:center;gap:6px}
 /* PDF VIEWER */
 .pdf-frame{background:#34373a;border-radius:11px;overflow:hidden;margin:13px 0}

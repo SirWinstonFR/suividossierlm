@@ -519,9 +519,28 @@ function computeDateEstimeeClient(dateConfirmation, semaines) {
 async function loadMiniMap(adresse) {
   const el = document.getElementById('plu-map');
   if (!el) return;
-  const q = encodeURIComponent(adresse);
-  el.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0"
-    src="https://www.google.com/maps?q=${q}&output=embed"></iframe>`;
+
+  // Géocode l'adresse via Nominatim (OpenStreetMap, gratuit, sans clé)
+  try {
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut);font-size:12px;gap:8px">${icon('loader',16)} Chargement de la carte...</div>`;
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(adresse)}&format=json&limit=1`, {
+      headers: { 'Accept-Language': 'fr', 'User-Agent': 'SuiviPoseLM/1.0' }
+    });
+    const data = await res.json();
+    if (!data.length) {
+      el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut2);font-size:12px">${icon('pin',14)} Adresse introuvable sur la carte</div>`;
+      return;
+    }
+    const { lat, lon } = data[0];
+    const z = 16; // zoom
+    // Embed OpenStreetMap via iframe officielle
+    el.innerHTML = `<iframe
+      width="100%" height="100%" frameborder="0" style="border:0;border-radius:9px"
+      src="https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lon)-.005},${parseFloat(lat)-.003},${parseFloat(lon)+.005},${parseFloat(lat)+.003}&layer=mapnik&marker=${lat},${lon}"
+      allowfullscreen></iframe>`;
+  } catch(e) {
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut2);font-size:12px">${icon('alert',14)} Impossible de charger la carte</div>`;
+  }
 }
 
 async function autoLoadCommandePdf(url) {
@@ -604,7 +623,7 @@ async function onPdfPoseSelected(file, dosId) {
     await sheetsWrite('update',{id:dosId,fields:{signe_pose:'true'}});
     showToast('Envoi vers votre espace...');
     await sendPdfToDrive(dosId, result.bytes, result.fileName, 'pose');
-    showToast('✓ Document de pose signé et transmis !');
+    showToastOk('✓ Document de pose signé et transmis !');
     renderClient(await sheetsGetById(dosId));
   } catch(e) {
     showToast('Erreur : ' + e.message);
