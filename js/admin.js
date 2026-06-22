@@ -425,3 +425,156 @@ function closeAdresseSuggestions() {
   const sug = document.getElementById('adresse-suggestions');
   if (sug) sug.style.display = 'none';
 }
+
+// ============================================================
+// BLOCS AUXILIAIRES DE LA FICHE DÉTAIL POSE
+// ============================================================
+
+function renderDateFields(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Dates clés</div>
+      <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDates('${d.id}'), '✓ Dates enregistrées')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
+    </div>`;
+}
+
+function renderMessageBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Message pour le client</div>
+      <div class="fg" style="margin-bottom:8px">
+        <textarea id="message-client" placeholder="Ex: Bonjour, votre commande avance bien." style="min-height:70px">${d.message_client||''}</textarea>
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveMessageClient('${d.id}'), '✓ Message enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Ce message s'affiche directement sur la page de suivi du client.</div>
+    </div>`;
+}
+
+function renderDocsBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Documents à transmettre</div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien pré-devis (Drive)</label><input id="predevis-url" type="url" placeholder="https://drive.google.com/..." value="${d.predevis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Bon de commande à signer (Drive)</label><input id="commande-url" type="url" placeholder="https://drive.google.com/file/d/.../view" value="${d.commande_url||''}"></div>
+      <div style="font-size:11px;color:var(--mut);margin:-4px 0 8px">${icon('alert',11)} Le fichier Drive doit être partagé en "Lecture pour toute personne disposant du lien"</div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDocs('${d.id}'), '✓ Documents enregistrés')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
+      ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
+    </div>`;
+}
+
+function renderDriveBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Espace Drive client</div>
+      ${d.drive_url
+        ? `<div class="drive-locked" onclick="window.open('${d.drive_url}','_blank')">${icon('link',15)}<span class="drive-locked-text">${d.drive_url}</span></div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">${icon('check',11)} Dossier créé automatiquement</div>`
+        : `<div class="drive-locked drive-locked-pending">${icon('loader',15)}<span class="drive-locked-text">Création du dossier en cours...</span></div>
+           <div style="font-size:11px;color:var(--mut);margin-top:8px">Actualisez la page dans quelques secondes</div>`
+      }
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Les documents signés sont automatiquement déposés ici.</div>
+    </div>`;
+}
+
+function renderTechBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Détails techniques</div>
+      <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTech('${d.id}'), '✓ Détails techniques enregistrés')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderTarifBloc(d) {
+  const total = (parseInt(d.prix_produit)||0) + (parseInt(d.prix_pose)||0);
+  return `
+    <div class="ic">
+      <div class="ict">Détail tarifaire (produit / pose)</div>
+      <div class="fg" style="margin-bottom:8px"><label>Prix produit (€)</label><input id="prix-produit" type="number" min="0" placeholder="ex: 2200" value="${d.prix_produit||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Prix pose (€)</label><input id="prix-pose" type="number" min="0" placeholder="ex: 600" value="${d.prix_pose||''}"></div>
+      ${total>0?`<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">Total : ${total.toLocaleString('fr-FR')} €</div>`:''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTarif('${d.id}'), '✓ Détail tarifaire enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderDelaiBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Délai de fabrication</div>
+      <div class="fg" style="margin-bottom:8px"><label>Durée (en semaines)</label><input id="delai-semaines" type="number" min="0" placeholder="ex: 6" value="${d.delai_fab_semaines||''}"></div>
+      ${d.date6 && d.delai_fab_semaines ? `<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">${icon('calendar',13)} Livraison estimée : ${computeDateEstimee(d.date6, d.delai_fab_semaines)}</div>` : ''}
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDelai('${d.id}'), '✓ Délai enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <div style="font-size:11px;color:var(--mut);margin-top:8px">Calculé à partir de la date de confirmation de commande.</div>
+    </div>`;
+}
+
+function renderTranspBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Livraison</div>
+      <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTransporteur('${d.id}'), '✓ Transporteur enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderAvantagesBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Avantages client</div>
+      <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://..." value="${d.ecoptz_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveAvantages('${d.id}'), '✓ Avantages enregistrés')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderPluBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Démarche administrative (PLU)</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="plu-check" ${d.plu_concerne==='true'?'checked':''} style="width:16px;height:16px">
+        Projet soumis à déclaration / PLU
+      </label>
+      <div class="fg" style="margin-bottom:8px;position:relative">
+        <label>Adresse du projet</label>
+        <input id="plu-adresse" placeholder="12 rue de la Paix, 75002 Paris"
+          value="${d.plu_adresse||''}" autocomplete="off"
+          oninput="adresseAutocomplete(this)"
+          onblur="setTimeout(()=>closeAdresseSuggestions(),200)">
+        <div id="adresse-suggestions" class="addr-suggestions" style="display:none"></div>
+      </div>
+      ${d.plu_adresse ? `<div id="admin-map" class="plu-map" style="margin-bottom:8px"></div>` : ''}
+      <div class="fg" style="margin-bottom:8px">
+        <label>Statut du dossier d'urbanisme</label>
+        <select id="plu-statut" style="padding:10px 12px;border:1.5px solid var(--mid);border-radius:7px;font-size:14px">
+          <option value="" ${!d.plu_statut?'selected':''}>— Non renseigné —</option>
+          <option value="en_attente" ${d.plu_statut==='en_attente'?'selected':''}>En attente de dépôt</option>
+          <option value="depose" ${d.plu_statut==='depose'?'selected':''}>Déposé en mairie</option>
+          <option value="valide" ${d.plu_statut==='valide'?'selected':''}>Validé</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:8px"><label>Lien du document déposé (Drive)</label><input id="plu-doc-url" type="url" placeholder="https://drive.google.com/..." value="${d.plu_doc_url||''}"></div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>savePlu('${d.id}'), '✓ PLU enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
+
+function renderFinancementBloc(d) {
+  return `
+    <div class="ic">
+      <div class="ict">Financement</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="ptz-check" ${d.financement_ptz==='true'?'checked':''} style="width:16px;height:16px">
+        Le client envisage un financement éco-PTZ
+      </label>
+      <div class="fg" style="margin-bottom:8px">
+        <label>Conseil de paiement (selon montant)</label>
+        <textarea id="financement-conseil" placeholder="Ex: Pour ce montant, nous recommandons un virement échelonné..." style="min-height:70px">${d.financement_conseil||''}</textarea>
+      </div>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveFinancement('${d.id}'), '✓ Financement enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
+    </div>`;
+}
