@@ -53,7 +53,7 @@ function showCreneauForm() {
       <div id="creneau-preview" style="margin-top:14px"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
         <button class="btn btn-d btn-sm" onclick="document.getElementById('creneauFormZone').style.display='none'">Annuler</button>
-        <button class="btn btn-p btn-sm" onclick="saveCreneauxBatch()">${icon('check',13)} Générer les créneaux</button>
+        <button class="btn btn-p btn-sm" onclick="saveWithFeedback(event, saveCreneauxBatch)">${icon('check',13)} Générer les créneaux</button>
       </div>
     </div>`;
   previewCreneaux();
@@ -155,7 +155,7 @@ async function deleteCreneau(id) {
   await sheetsWrite('creneauDelete', { id });
   _creneaux = _creneaux.filter(c => c.id !== id);
   renderCreneauxList();
-  showToast('✓ Créneau supprimé');
+  showToastOk('✓ Créneau supprimé');
 }
 
 // === VUE CLIENT — choix d'un créneau ===
@@ -186,7 +186,7 @@ function renderCreneauxClient(dossierId) {
 async function reserverCreneau(creneauId, dossierId) {
   showToast('Réservation en cours...');
   await sheetsWrite('creneauReserver', { creneauId, dossierId });
-  showToast('✓ Rendez-vous confirmé !');
+  showToastOk('✓ Rendez-vous confirmé !');
   setTimeout(async () => {
     const d = await sheetsGetById(dossierId);
     if (d) renderClient(d);
@@ -236,7 +236,7 @@ function renderRdvAReporterView() {
               <div class="rdv-report-date">${c.date} · ${c.heure_debut} — ${c.heure_fin}</div>
               <div class="rdv-report-client">${c.nom_client||'Client'} · Dossier ${c.dossier_id}</div>
             </div>
-            <button class="btn btn-p btn-sm" onclick="marquerReporte('${c.id}')">${icon('check',13)} Reporté</button>
+            <button class="btn btn-p btn-sm" onclick="saveWithFeedback(event, ()=>marquerReporte('${c.id}'), '✓ Reporté')">${icon('check',13)} Reporté</button>
           </div>`).join('')
       }
     </div>`;
@@ -248,5 +248,5 @@ async function marquerReporte(creneauId) {
   if (c) c.report_pro = 'oui';
   renderRdvAReporterView();
   renderRdvBadge();
-  showToast('✓ Marqué comme reporté');
+  showToastOk('✓ Marqué comme reporté');
 }

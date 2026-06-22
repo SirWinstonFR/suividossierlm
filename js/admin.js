@@ -25,16 +25,16 @@ function doLogin() {
 function doLogout() { sessionStorage.removeItem('lm_auth'); showView('vLogin'); }
 
 async function loadAll() {
-  document.getElementById('lbar').style.display = 'block';
+  lbar.start();
   try { _dossiers = await sheetsGetAll(); }
-  catch(e) { showToast('Erreur : ' + e.message); _dossiers = []; }
+  catch(e) { showToastError('Erreur chargement : ' + e.message); _dossiers = []; }
   try { _savDossiers = await savGetAll(); }
   catch(e) { _savDossiers = []; }
   await loadCatalogue();
   await loadCreneaux();
   populateGammeSelect();
   renderRdvBadge();
-  document.getElementById('lbar').style.display = 'none';
+  lbar.done();
   renderListe();
 }
 
@@ -121,11 +121,11 @@ async function checkSavId() {
 async function creerDosPose() {
   const id  = document.getElementById('fid').value.trim();
   const nom = document.getElementById('fnom').value.trim();
-  if (!id)  { showToast('Numéro de dossier requis.'); return; }
-  if (!nom) { showToast('Nom requis.'); return; }
+  if (!id)  { showToastError('Numéro de dossier requis.'); return; }
+  if (!nom) { showToastError('Nom requis.'); return; }
 
   const available = await checkIdAvailable(id);
-  if (!available) { showToast('Ce numéro de dossier existe déjà.'); return; }
+  if (!available) { showToastError('Ce numéro de dossier existe déjà.'); return; }
 
   const token = genToken();
   const row = {
@@ -171,11 +171,11 @@ async function creerDosPose() {
 async function creerDosSav() {
   const id  = document.getElementById('sid').value.trim();
   const nom = document.getElementById('snom').value.trim();
-  if (!id)  { showToast('Numéro de dossier requis.'); return; }
-  if (!nom) { showToast('Nom requis.'); return; }
+  if (!id)  { showToastError('Numéro de dossier requis.'); return; }
+  if (!nom) { showToastError('Nom requis.'); return; }
 
   const available = await checkIdAvailable(id);
-  if (!available) { showToast('Ce numéro de dossier existe déjà.'); return; }
+  if (!available) { showToastError('Ce numéro de dossier existe déjà.'); return; }
 
   const token = genToken();
   const row = {
@@ -254,7 +254,7 @@ function renderDetail() {
   }).join('');
 
   const sbts = STEPS.map((s,i) =>
-    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${icon(s.ic,14)} ${s.l}</button>`
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="saveWithFeedback(event, ()=>setEtape(${i+1}))">${icon(s.ic,14)} ${s.l}</button>`
   ).join('');
 
   document.getElementById('detailCont').innerHTML = `
@@ -339,7 +339,7 @@ function renderDetail() {
             <div class="ict">Équipe en charge du projet</div>
             <div style="font-size:11px;color:var(--mut);margin-bottom:8px">Un membre par ligne, format : <code>Nom | Rôle</code></div>
             <textarea id="equipe-input" placeholder="Marc Dubois | Technicien poseur&#10;Sophie Leclerc | Conseillère commerciale" style="min-height:80px">${d.equipe||''}</textarea>
-            <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveEquipe('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+            <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveWithFeedback(event, ()=>saveEquipe('${d.id}'), '✓ Équipe mise à jour')">${icon('deviceFloppy',14)} Enregistrer</button>
             <div style="font-size:11px;color:var(--mut);margin-top:8px">Affiché sous le conseiller principal, côté client.</div>
           </div>
         </div>
@@ -362,7 +362,7 @@ function renderDateFields(d) {
       <div class="fg" style="margin-bottom:8px"><label>RDV planifié</label><input id="date-2" type="date" value="${toISO(d.date2)}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Retour technicien</label><input id="date-3" type="date" value="${toISO(d.date3)}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Devis envoyé</label><input id="date-4" type="date" value="${toISO(d.date4)}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDates('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDates('${d.id}'), '✓ Dates enregistrées')">${icon('deviceFloppy',14)} Enregistrer les dates</button>
     </div>`;
 }
 
@@ -373,7 +373,7 @@ function renderMessageBloc(d) {
       <div class="fg" style="margin-bottom:8px">
         <textarea id="message-client" placeholder="Ex: Bonjour, votre commande avance bien, n'hésitez pas à me contacter si besoin." style="min-height:70px">${d.message_client||''}</textarea>
       </div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveMessageClient('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveMessageClient('${d.id}'), '✓ Message enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Ce message s'affiche directement sur la page de suivi du client.</div>
     </div>`;
 }
@@ -386,7 +386,7 @@ function renderDocsBloc(d) {
       <div class="fg" style="margin-bottom:8px"><label>Lien devis final (Drive)</label><input id="devis-url" type="url" placeholder="https://drive.google.com/..." value="${d.devis_url||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Bon de commande à signer (Drive)</label><input id="commande-url" type="url" placeholder="https://drive.google.com/file/d/.../view" value="${d.commande_url||''}"></div>
       <div style="font-size:11px;color:var(--mut);margin:-4px 0 8px">${icon('alert',11)} Le fichier Drive doit être partagé en "Lecture pour toute personne disposant du lien"</div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDocs('${d.id}')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDocs('${d.id}'), '✓ Documents enregistrés')">${icon('deviceFloppy',14)} Enregistrer les liens</button>
       ${d.sig_data ? `<div style="margin-top:10px;background:var(--gl);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--gd);display:flex;align-items:center;gap:6px">${icon('signature',14)} Signature client enregistrée — réutilisable</div>` : ''}
     </div>`;
 }
@@ -419,7 +419,7 @@ function renderTarifBloc(d) {
       <div class="fg" style="margin-bottom:8px"><label>Prix produit (€)</label><input id="prix-produit" type="number" min="0" placeholder="ex: 2200" value="${d.prix_produit||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Prix pose (€)</label><input id="prix-pose" type="number" min="0" placeholder="ex: 600" value="${d.prix_pose||''}"></div>
       ${total>0?`<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">Total : ${total.toLocaleString('fr-FR')} €</div>`:''}
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTarif('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTarif('${d.id}'), '✓ Détail tarifaire enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Le détail est affiché côté client, dépliable, sous le prix final.</div>
     </div>`;
 }
@@ -430,7 +430,7 @@ function renderTechBloc(d) {
       <div class="ict">Détails techniques</div>
       <div class="fg" style="margin-bottom:8px"><label>Artisan / Poseur</label><input id="tech-artisan" value="${d.artisan||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Modèle détaillé</label><textarea id="tech-modele" style="min-height:50px">${d.modele||''}</textarea></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTech('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTech('${d.id}'), '✓ Détails techniques enregistrés')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 }
 
@@ -443,7 +443,7 @@ function renderDelaiBloc(d) {
         <input id="delai-semaines" type="number" min="0" placeholder="ex: 6" value="${d.delai_fab_semaines||''}">
       </div>
       ${d.date6 && d.delai_fab_semaines ? `<div style="font-size:12px;color:var(--gd);background:var(--gl);border-radius:6px;padding:8px 10px;margin-bottom:8px">${icon('calendar',13)} Livraison estimée : ${computeDateEstimee(d.date6, d.delai_fab_semaines)}</div>` : ''}
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveDelai('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveDelai('${d.id}'), '✓ Délai enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Calculé à partir de la date de confirmation de commande.</div>
     </div>`;
 }
@@ -453,7 +453,7 @@ function renderTranspBloc(d) {
     <div class="ic">
       <div class="ict">Livraison</div>
       <div class="fg" style="margin-bottom:8px"><label>Transporteur</label><input id="transp-input" placeholder="ex: Chronopost" value="${d.transporteur||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveTransporteur('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveTransporteur('${d.id}'), '✓ Transporteur enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 }
 
@@ -463,7 +463,7 @@ function renderAvantagesBloc(d) {
       <div class="ict">Avantages client</div>
       <div class="fg" style="margin-bottom:8px"><label>Promo éligible</label><input id="adm-promo" placeholder="ex: -10% pose" value="${d.promo||''}"></div>
       <div class="fg" style="margin-bottom:8px"><label>Lien éco-PTZ</label><input id="adm-ecoptz" type="url" placeholder="https://... (à ajouter quand disponible)" value="${d.ecoptz_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveAvantages('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveAvantages('${d.id}'), '✓ Avantages enregistrés')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 }
 
@@ -486,7 +486,7 @@ function renderPluBloc(d) {
         </select>
       </div>
       <div class="fg" style="margin-bottom:8px"><label>Lien du document déposé (Drive)</label><input id="plu-doc-url" type="url" placeholder="https://drive.google.com/..." value="${d.plu_doc_url||''}"></div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="savePlu('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>savePlu('${d.id}'), '✓ PLU enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
     </div>`;
 }
 
@@ -502,7 +502,7 @@ function renderFinancementBloc(d) {
         <label>Conseil de paiement (selon montant)</label>
         <textarea id="financement-conseil" placeholder="Ex: Pour un montant de cet ordre, nous recommandons l'ouverture d'un compte dédié ou un virement échelonné..." style="min-height:70px">${d.financement_conseil||''}</textarea>
       </div>
-      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveFinancement('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+      <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveFinancement('${d.id}'), '✓ Financement enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
       <div style="font-size:11px;color:var(--mut);margin-top:8px">Affiché dans la section Administratif, côté client.</div>
     </div>`;
 }
@@ -536,7 +536,7 @@ async function saveTarif(id) {
   const pose = document.getElementById('prix-pose').value.trim();
   d.prix_produit = prod; d.prix_pose = pose;
   await sheetsWrite('update', { id, fields:{ prix_produit: prod, prix_pose: pose } });
-  showToast('✓ Détail tarifaire enregistré');
+  showToastOk('✓ Détail tarifaire enregistré');
   renderDetail();
 }
 
@@ -545,7 +545,7 @@ async function saveEquipe(id) {
   const val = document.getElementById('equipe-input').value.trim();
   d.equipe = val;
   await sheetsWrite('update', { id, fields:{ equipe: val } });
-  showToast('✓ Équipe mise à jour');
+  showToastOk('✓ Équipe mise à jour');
   renderDetail();
 }
 
@@ -554,7 +554,7 @@ async function saveMessageClient(id) {
   const val = document.getElementById('message-client').value.trim();
   d.message_client = val;
   await sheetsWrite('update', { id, fields:{ message_client: val } });
-  showToast('✓ Message enregistré');
+  showToastOk('✓ Message enregistré');
   renderDetail();
 }
 
@@ -565,7 +565,7 @@ async function saveDates(id) {
   const f4 = fromISO(document.getElementById('date-4').value);
   d.date2=f2; d.date3=f3; d.date4=f4;
   await sheetsWrite('update', { id, fields:{ date2:f2, date3:f3, date4:f4 } });
-  showToast('✓ Dates enregistrées');
+  showToastOk('✓ Dates enregistrées');
   renderDetail();
 }
 
@@ -576,7 +576,7 @@ async function saveDocs(id) {
   const cmd = document.getElementById('commande-url').value.trim();
   d.predevis_url = pre; d.devis_url = dev; d.commande_url = cmd;
   await sheetsWrite('update', { id, fields:{ predevis_url:pre, devis_url:dev, commande_url:cmd } });
-  showToast('✓ Documents enregistrés');
+  showToastOk('✓ Documents enregistrés');
   renderDetail();
 }
 
@@ -593,7 +593,7 @@ async function saveDelai(id) {
   const val = document.getElementById('delai-semaines').value.trim();
   d.delai_fab_semaines = val;
   await sheetsWrite('update', { id, fields:{ delai_fab_semaines: val } });
-  showToast('✓ Délai enregistré');
+  showToastOk('✓ Délai enregistré');
   renderDetail();
 }
 
@@ -603,7 +603,7 @@ async function saveTech(id) {
   const mod = document.getElementById('tech-modele').value.trim();
   d.artisan = art; d.modele = mod;
   await sheetsWrite('update', { id, fields:{ artisan:art, modele:mod } });
-  showToast('✓ Détails techniques enregistrés');
+  showToastOk('✓ Détails techniques enregistrés');
   renderDetail();
 }
 
@@ -613,7 +613,7 @@ async function saveAvantages(id) {
   const eco = document.getElementById('adm-ecoptz').value.trim();
   d.promo = promo; d.ecoptz_url = eco;
   await sheetsWrite('update', { id, fields:{ promo, ecoptz_url:eco } });
-  showToast('✓ Avantages enregistrés');
+  showToastOk('✓ Avantages enregistrés');
   renderDetail();
 }
 
@@ -628,7 +628,7 @@ async function savePlu(id) {
   d.plu_statut = statut;
   d.plu_doc_url = docUrl;
   await sheetsWrite('update', { id, fields:{ plu_concerne:String(checked), plu_adresse:adresse, plu_statut:statut, plu_doc_url:docUrl } });
-  showToast('✓ Info PLU enregistrée');
+  showToastOk('✓ Info PLU enregistrée');
   renderDetail();
 }
 
@@ -639,7 +639,7 @@ async function saveFinancement(id) {
   d.financement_ptz = String(ptz);
   d.financement_conseil = conseil;
   await sheetsWrite('update', { id, fields:{ financement_ptz:String(ptz), financement_conseil:conseil } });
-  showToast('✓ Financement enregistré');
+  showToastOk('✓ Financement enregistré');
   renderDetail();
 }
 
@@ -648,13 +648,13 @@ async function saveTransporteur(id) {
   const val = document.getElementById('transp-input').value.trim();
   d.transporteur = val;
   await sheetsWrite('update', { id, fields:{ transporteur: val } });
-  showToast('✓ Transporteur enregistré');
+  showToastOk('✓ Transporteur enregistré');
   renderDetail();
 }
 
 function sendStatusEmail(id) {
   const d = _dossiers.find(x=>x.id===id); if (!d) return;
-  if (!d.email) { showToast("Aucun email renseigné pour ce client"); return; }
+  if (!d.email) { showToastError('Aucun email renseigné pour ce client'); return; }
 
   const e = parseInt(d.etape)||1;
   const etapeLabel = STEPS[e-1]?.l || '';
@@ -676,7 +676,7 @@ function sendStatusEmail(id) {
 function copyLien(token, type) {
   const path = type === 'sav' ? '/sav/' : '/client/';
   const lien = location.origin + CFG.BASE_PATH + path + token;
-  navigator.clipboard.writeText(lien).then(() => showToast('✓ Lien copié !'));
+  navigator.clipboard.writeText(lien).then(() => showToastOk('✓ Lien copié !'));
 }
 
 // ============================================================
@@ -701,7 +701,7 @@ function renderDetailSav() {
   }).join('');
 
   const sbts = STEPS_SAV.map((s,i) =>
-    `<button class="step-btn ${e===i+1?'sel':''}" onclick="setEtape(${i+1})">${icon(s.ic,14)} ${s.l}</button>`
+    `<button class="step-btn ${e===i+1?'sel':''}" onclick="saveWithFeedback(event, ()=>setEtape(${i+1}))">${icon(s.ic,14)} ${s.l}</button>`
   ).join('');
 
   document.getElementById('detailCont').innerHTML = `
@@ -732,13 +732,13 @@ function renderDetailSav() {
           <div class="ict">Détails du SAV</div>
           <div class="fg" style="margin-bottom:8px"><label>Motif du SAV</label><textarea id="sav-motif" style="min-height:60px">${d.motif_sav||''}</textarea></div>
           <div class="fg" style="margin-bottom:8px"><label>Produit concerné</label><input id="sav-produit" value="${d.produit_concerne||''}"></div>
-          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveSavDetails('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveSavDetails('${d.id}'), '✓ Détails enregistrés')">${icon('deviceFloppy',14)} Enregistrer</button>
         </div>
 
         <div class="ic">
           <div class="ict">Message pour le client</div>
           <textarea id="sav-message" placeholder="Ex: Votre pièce a été commandée, livraison estimée sous 2 semaines." style="min-height:70px">${d.message_client||''}</textarea>
-          <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveSavMessage('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+          <button class="btn btn-p btn-sm" style="width:100%;margin-top:8px" onclick="saveWithFeedback(event, ()=>saveSavMessage('${d.id}'), '✓ Message enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
         </div>
 
         <div class="ic">
@@ -747,7 +747,7 @@ function renderDetailSav() {
           <div class="fg" style="margin-bottom:8px"><label>Tél. conseiller</label><input id="sav-tel-conseiller" value="${d.tel_conseiller||''}"></div>
           <div class="fg" style="margin-bottom:8px"><label>Email client</label><input id="sav-email" type="email" value="${d.email||''}"></div>
           <div class="fg" style="margin-bottom:8px"><label>Tél. client</label><input id="sav-tel" value="${d.tel||''}"></div>
-          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveSavContact('${d.id}')">${icon('deviceFloppy',14)} Enregistrer</button>
+          <button class="btn btn-p btn-sm" style="width:100%" onclick="saveWithFeedback(event, ()=>saveSavContact('${d.id}'), '✓ Contact enregistré')">${icon('deviceFloppy',14)} Enregistrer</button>
           ${d.notes?`<div style="margin-top:10px;font-size:12px;background:#f5f5f5;padding:8px 10px;border-radius:4px">${d.notes}</div>`:''}
         </div>
 
@@ -766,7 +766,7 @@ async function saveSavDetails(id) {
   const produit = document.getElementById('sav-produit').value.trim();
   d.motif_sav = motif; d.produit_concerne = produit;
   await sheetsWrite('update', { id, fields:{ motif_sav:motif, produit_concerne:produit }, sheetType:'sav' });
-  showToast('✓ Détails enregistrés');
+  showToastOk('✓ Détails enregistrés');
   renderDetailSav();
 }
 
@@ -775,7 +775,7 @@ async function saveSavMessage(id) {
   const val = document.getElementById('sav-message').value.trim();
   d.message_client = val;
   await sheetsWrite('update', { id, fields:{ message_client: val }, sheetType:'sav' });
-  showToast('✓ Message enregistré');
+  showToastOk('✓ Message enregistré');
   renderDetailSav();
 }
 
@@ -787,6 +787,24 @@ async function saveSavContact(id) {
   const tel = document.getElementById('sav-tel').value.trim();
   Object.assign(d, { conseiller, tel_conseiller: telConseiller, email, tel });
   await sheetsWrite('update', { id, fields:{ conseiller, tel_conseiller:telConseiller, email, tel }, sheetType:'sav' });
-  showToast('✓ Contact enregistré');
+  showToastOk('✓ Contact enregistré');
   renderDetailSav();
+}
+
+// ============================================================
+// FEEDBACK BOUTONS — wrappeur global pour toutes les actions async
+// Cherche le bouton cliqué dans l'event, le désactive + spinner,
+// puis restaure après l'action et affiche le toast approprié.
+// ============================================================
+async function saveWithFeedback(event, asyncFn, successMsg) {
+  const btn = event?.currentTarget || event?.target;
+  const restore = btnLoad(btn instanceof HTMLElement ? btn : null);
+  try {
+    await asyncFn();
+    restore();
+    if (successMsg) showToastOk(successMsg);
+  } catch(e) {
+    restore();
+    showToastError('Erreur : ' + (e.message || String(e)));
+  }
 }

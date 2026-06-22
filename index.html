@@ -268,10 +268,13 @@ textarea{resize:vertical;min-height:72px}
 .livraison-label{font-size:10.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .livraison-val{font-size:16px;font-weight:700;margin-top:3px}
 /* UTILS */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--blk);color:white;padding:13px 20px;border-radius:9px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .25s;z-index:999;pointer-events:none;max-width:320px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--blk);color:white;padding:13px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .25s cubic-bezier(.34,1.4,.64,1);z-index:9999;pointer-events:none;max-width:340px;box-shadow:0 6px 24px rgba(0,0,0,.22);display:flex;align-items:center;gap:9px}
 .toast.show{opacity:1;transform:translateY(0)}
-.lbar{height:3px;background:var(--g);animation:sl 1.5s infinite;display:none;position:fixed;top:0;left:0;right:0;z-index:999}
-@keyframes sl{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+.toast.toast-ok{background:#2d7a2d}
+.toast.toast-error{background:#c0392b}
+.lbar{height:3px;background:var(--g);display:none;position:fixed;top:0;left:0;z-index:9999;width:0%}
+@keyframes spin{to{transform:rotate(360deg)}}
+.icon-spin{animation:spin 1s linear infinite}
 @media(max-width:680px){
   .doc-pills{flex-wrap:wrap}
   .dpill{min-width:90px}
@@ -380,7 +383,7 @@ textarea{resize:vertical;min-height:72px}
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
-            <button class="btn btn-p" onclick="creerDosPose()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier</button>
+            <button class="btn btn-p" onclick="saveWithFeedback(event, creerDosPose)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier</button>
           </div>
         </div>
 
@@ -403,7 +406,7 @@ textarea{resize:vertical;min-height:72px}
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-d btn-sm" onclick="showTab('list')">Annuler</button>
-            <button class="btn btn-p" onclick="creerDosSav()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier SAV</button>
+            <button class="btn btn-p" onclick="saveWithFeedback(event, creerDosSav)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Créer le dossier SAV</button>
           </div>
         </div>
       </div>

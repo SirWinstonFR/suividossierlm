@@ -120,7 +120,7 @@ function showCatalogueForm(existingId) {
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
         <button class="btn btn-d btn-sm" onclick="document.getElementById('catalogueFormZone').style.display='none'">Annuler</button>
-        <button class="btn btn-p btn-sm" onclick="saveCatalogueItem(${editing?`'${editing.id}'`:'null'})">${icon('check',13)} Enregistrer</button>
+        <button class="btn btn-p btn-sm" onclick="saveWithFeedback(event, ()=>saveCatalogueItem(${editing?`'${editing.id}'`:'null'}), '✓ Catalogue mis à jour')">${icon('check',13)} Enregistrer</button>
       </div>
     </div>`;
 }
@@ -145,7 +145,7 @@ async function saveCatalogueItem(id) {
     // recharge pour récupérer l'id généré côté serveur
     await loadCatalogue();
   }
-  showToast('✓ Catalogue mis à jour');
+  showToastOk('✓ Catalogue mis à jour');
   document.getElementById('catalogueFormZone').style.display = 'none';
   renderCatalogueList();
 }
@@ -155,7 +155,7 @@ async function deleteCatalogueItem(id) {
   await sheetsWrite('catalogueDelete', { id });
   _catalogue = _catalogue.filter(c => c.id !== id);
   renderCatalogueList();
-  showToast('✓ Entrée supprimée');
+  showToastOk('✓ Entrée supprimée');
 }
 
 // === CASCADE FORMULAIRE DE CRÉATION ===
