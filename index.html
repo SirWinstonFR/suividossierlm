@@ -40,6 +40,25 @@ svg{display:inline-block}
 .page{padding:24px;max-width:1100px;margin:0 auto}
 .tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:1.5px solid var(--mid)}
 .newtype-bar{display:flex;gap:8px;margin-bottom:16px}
+.ltab{flex:1;padding:9px;border-radius:7px;border:1.5px solid var(--mid);background:white;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--mut);transition:all .15s}
+.ltab:hover{border-color:var(--g);color:var(--gd)}
+.ltab.ltab-active{background:var(--g);border-color:var(--g);color:white}
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.dash-kpi{background:white;border:1px solid var(--mid);border-radius:11px;padding:18px 20px}
+.dash-kpi-val{font-size:26px;font-weight:800;color:var(--gd);letter-spacing:-.5px}
+.dash-kpi-label{font-size:11.5px;color:var(--mut);margin-top:4px;font-weight:600}
+.dash-etapes{display:flex;gap:8px;align-items:flex-end;padding:8px 0;overflow-x:auto}
+.dash-etape-col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;flex:1}
+.dash-etape-bar-wrap{height:130px;display:flex;align-items:flex-end;justify-content:center;width:100%}
+.dash-etape-bar{width:28px;background:var(--g);border-radius:5px 5px 0 0;min-height:4px;transition:height .4s ease}
+.dash-etape-count{font-size:16px;font-weight:800;color:var(--gd)}
+.dash-etape-label{font-size:9.5px;font-weight:600;color:var(--mut);text-align:center;display:flex;align-items:center;gap:3px}
+.dash-etape-montant{font-size:10px;color:var(--mut2)}
+.dash-period-bar{display:flex;background:#f5f5f3;border-radius:8px;padding:3px;gap:3px}
+.dash-period-btn{padding:7px 14px;border-radius:6px;border:none;background:none;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--mut);transition:all .15s}
+.dash-period-btn.active{background:white;color:var(--gd);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.dash-conseiller{display:flex;align-items:center;gap:12px}
+.dash-conseiller-av{width:36px;height:36px;border-radius:50%;background:var(--g);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
 .newtype-btn{flex:1;padding:11px;border-radius:9px;border:1.5px solid var(--mid);background:white;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--mut);transition:all .15s}
 .newtype-btn:hover{border-color:var(--g);color:var(--gd)}
 .newtype-btn.active{background:var(--g);border-color:var(--g);color:white}
@@ -294,32 +313,24 @@ textarea{resize:vertical;min-height:72px}
 
 <!-- LOGIN -->
 <div id="vLogin" style="display:none">
-  <div class="login-wrap">
-    <div class="login-card">
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px">
-        <div class="tri"></div><div style="font-size:18px;font-weight:800">LEROY MERLIN</div>
-      </div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:6px">Interface Admin</div>
-      <div style="font-size:13px;color:var(--mut);margin-bottom:20px">Suivi dossiers de pose</div>
-      <input type="password" id="lpwd" placeholder="Mot de passe" style="width:100%;margin-bottom:10px">
-      <button class="btn btn-p" style="width:100%" onclick="doLogin()">Connexion</button>
-      <div id="lerr" style="color:#e53935;font-size:13px;margin-top:10px;min-height:18px"></div>
-    </div>
-  </div>
+  <div id="loginCont"></div>
 </div>
 
 <!-- ADMIN -->
 <div id="vAdmin" style="display:none">
   <div class="hdr">
-    <div class="logo"><div class="tri"></div><div class="logo-t">LEROY MERLIN<br><span class="logo-s">Admin · Suivi pose</span></div></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-p btn-sm" onclick="showTab('new')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau</button>
-      <button class="btn btn-o btn-sm" onclick="openCatalogueView()">Catalogue</button>
-      <button class="btn btn-o btn-sm" onclick="openCreneauxView()">Créneaux</button>
-      <button class="btn btn-o btn-sm" style="position:relative" onclick="openRdvAReporterView()">
+    <div class="logo"><div class="tri"></div><div class="logo-t">LEROY MERLIN<br><span class="logo-s" id="hdr-role-label">Admin · Suivi pose</span></div></div>
+    <div style="display:flex;gap:8px" id="hdr-actions">
+      <button class="btn btn-p btn-sm admin-only" onclick="showTab('new')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau</button>
+      <button class="btn btn-p btn-sm conseiller-only" onclick="showTab('new')" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nouveau</button>
+      <button class="btn btn-o btn-sm admin-only" onclick="openCatalogueView()">Catalogue</button>
+      <button class="btn btn-o btn-sm admin-only" onclick="openCreneauxView()">Créneaux</button>
+      <button class="btn btn-o btn-sm admin-only" style="position:relative" onclick="openRdvAReporterView()">
         RDV à reporter
         <span id="rdv-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e53935;color:white;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px">0</span>
       </button>
+      <button class="btn btn-o btn-sm admin-only" onclick="openConseillersView()">Conseillers</button>
+      <button class="btn btn-o btn-sm chef-only" style="display:none" onclick="openDashboard()">Dashboard</button>
       <button class="btn btn-o btn-sm" onclick="loadAll()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
       <button class="btn btn-o btn-sm" onclick="doLogout()">Déconnexion</button>
     </div>
@@ -441,6 +452,18 @@ textarea{resize:vertical;min-height:72px}
       <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeRdvAReporterView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
     </div>
   </div>
+  <div id="vConseillers" style="display:none">
+    <div id="conseillersContenu"></div>
+    <div class="page" style="padding-top:0">
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeConseillersView()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
+    </div>
+  </div>
+  <div id="vDashboard" style="display:none">
+    <div id="dashboardCont"></div>
+    <div class="page" style="padding-top:0">
+      <button style="background:none;border:none;font-size:13px;color:var(--mut);cursor:pointer;padding:0;display:flex;align-items:center;gap:6px" onclick="closeDashboard()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Retour à la liste</button>
+    </div>
+  </div>
 </div>
 
 <!-- CLIENT -->
@@ -463,6 +486,9 @@ textarea{resize:vertical;min-height:72px}
 <script src="js/pdf.js"></script>
 <script src="js/catalogue.js"></script>
 <script src="js/creneaux.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/conseillers-admin.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/client.js"></script>
 <script src="js/sav.js"></script>
