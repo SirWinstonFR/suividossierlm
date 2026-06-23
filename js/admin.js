@@ -5,7 +5,7 @@
 let _dossiers = [], _savDossiers = [], _curId = null, _curType = 'pose';
 
 function hideAllAdminViews() {
-  ['vListe','vDetail','vCatalogue','vCreneaux','vRdvReporter'].forEach(id => {
+  ['vListe','vDetail','vCatalogue','vCreneaux','vRdvReporter','vConseillers','vDashboard'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });

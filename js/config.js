@@ -3,10 +3,15 @@ const CFG = {
   API_KEY:     'AIzaSyCyvTQg8tzasPEvi2-fDtNkO2n6KEcDL-8',
   SHEET_NAME:  'Feuille 1',
   SAV_SHEET_NAME: 'SAV',
+  CONSEILLERS_SHEET_NAME: 'Conseillers',
   ADMIN_PWD:   'leroy2025',
-  SCRIPT_URL:  'https://script.google.com/macros/s/AKfycbzVyE-VoVVtr9iuw3tsW38Iw-lbT_YGlneYlQpRznG9p-PjIfOAWWvNoMhF7FdhUe-Fcg/exec',
+  CHEF_PWD:    'chef2025',   // À changer après le premier déploiement
   BASE_PATH:   '/suividossierlm',
+  SCRIPT_URL:  'https://script.google.com/macros/s/AKfycbzVyE-VoVVtr9iuw3tsW38Iw-lbT_YGlneYlQpRznG9p-PjIfOAWWvNoMhF7FdhUe-Fcg/exec',
 };
+
+// RÔLES : 'admin' | 'chef' | 'conseiller'
+// Stocké en sessionStorage sous la clé 'lm_role' et 'lm_conseiller_id'
 
 const STEPS_POSE = [
   { l:'Démarche lancée',      ic:'rocket',     desc:'Votre projet a été enregistré.' },

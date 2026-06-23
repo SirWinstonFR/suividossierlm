@@ -112,11 +112,30 @@ window.onload = function() {
     initClient(poseToken);
   } else if (sessionStorage.getItem('lm_auth') === 'ok') {
     showView('vAdmin');
+    applyRoleUI();
     loadAll();
   } else {
     showView('vLogin');
-    document.getElementById('lpwd')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
-    });
+    renderLoginPage();
   }
 };
+
+// Applique les éléments visuels selon le rôle connecté
+function applyRoleUI() {
+  const role = getRole();
+  const c = getConseillerSession();
+  // Label header
+  const lbl = document.getElementById('hdr-role-label');
+  if (lbl) {
+    if (role==='chef') lbl.textContent = 'Chef de Secteur';
+    else if (role==='conseiller') lbl.textContent = `Conseiller · ${c?.nom||''}`;
+    else lbl.textContent = 'Admin · Suivi pose';
+  }
+  // Boutons conditionnels
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = role==='admin'?'':'none');
+  document.querySelectorAll('.chef-only').forEach(el => el.style.display = role==='chef'?'':'none');
+  document.querySelectorAll('.conseiller-only').forEach(el => el.style.display = role==='conseiller'?'':'none');
+
+  // Chef de Secteur → ouvre directement le dashboard
+  if (role === 'chef') openDashboard();
+}
