@@ -190,6 +190,7 @@ function renderClient(d) {
     </div>` : '';
 
   // === PROMO + ECO-PTZ ===
+  // === AVANTAGES — Promo + Éco-PTZ ===
   const avantagesBloc = (d.promo || d.ecoptz_url) ? `
     <div class="sc">
       <div class="ict">Vos avantages</div>
@@ -199,58 +200,59 @@ function renderClient(d) {
         <div class="promo-sub">${d.promo}</div></div>
       </div>` : ''}
       ${d.ecoptz_url ? `<div class="ecoptz-row" style="margin-top:${d.promo?'10px':'0'}">
-        <div class="ecoptz-info">
-          ${icon('bank',20)}
-          <div class="ecoptz-label">Éco-PTZ disponible</div>
-        </div>
+        <div class="ecoptz-info">${icon('bank',20)}<div class="ecoptz-label">Éco-PTZ disponible</div></div>
         <button class="btn btn-p btn-sm" onclick="openLink('${d.ecoptz_url}')">Faire ma demande</button>
       </div>` : ''}
     </div>` : '';
 
-  // === PLU / Adresse + mini-carte ===
-  // === SECTION ADMINISTRATIF — PLU + Financement (gauche) / Carte adresse (droite) ===
+  // === PLU — bandeau d'alerte bien visible ===
   const pluConcerne = d.plu_concerne === 'true';
   const hasFinancementInfo = d.financement_ptz === 'true' || d.financement_conseil;
-  const showAdminSection = pluConcerne || hasFinancementInfo;
+  const pluStatutLabel = { en_attente:'En attente de dépôt', depose:'Déposé en mairie', valide:'Validé' };
+  const pluStatutClass = { en_attente:'plu-statut-attente', depose:'plu-statut-depose', valide:'plu-statut-valide' };
 
-  const pluStatutLabel = { en_attente: 'En attente de dépôt', depose: 'Déposé en mairie', valide: 'Validé' };
-  const pluStatutClass = { en_attente: 'plu-statut-attente', depose: 'plu-statut-depose', valide: 'plu-statut-valide' };
-
-  const pluBloc = showAdminSection ? `
-    <div class="sc">
-      <div class="ict">Administratif</div>
-      <div class="admin-grid">
-        <div class="admin-col">
-
-          ${pluConcerne ? `
-            <div class="admin-block">
-              <div class="admin-block-title">${icon('alert',15)} Déclaration PLU</div>
-              <div class="admin-block-text">Votre projet est soumis à déclaration préalable. Une démarche administrative est nécessaire avant le début des travaux.</div>
-              ${d.plu_statut ? `<span class="plu-statut-pill ${pluStatutClass[d.plu_statut]||''}">${pluStatutLabel[d.plu_statut]||d.plu_statut}</span>` : ''}
-              ${d.plu_doc_url ? `<button class="fiche-btn" style="margin-top:10px" onclick="openLink('${d.plu_doc_url}')">
-                <span class="fiche-btn-ic">${icon('filetext',16)}</span>
-                <span class="fiche-btn-text">
-                  <span class="fiche-btn-title">Document déposé</span>
-                  <span class="fiche-btn-sub">Consulter le dossier d'urbanisme</span>
-                </span>
-                <span class="fiche-btn-arrow">${icon('arrowright',15)}</span>
-              </button>` : ''}
-            </div>` : ''}
-
-          ${hasFinancementInfo ? `
-            <div class="admin-block" ${pluConcerne?'style="margin-top:16px"':''}>
-              <div class="admin-block-title">${icon('bank',15)} Financement</div>
-              ${d.financement_ptz==='true' ? `<div class="ptz-pill">${icon('discount',13)} Éco-PTZ envisagé</div>` : ''}
-              ${d.financement_conseil ? `<div class="admin-block-text" ${d.financement_ptz==='true'?'style="margin-top:9px"':''}>${d.financement_conseil}</div>` : ''}
-            </div>` : ''}
-
+  const pluBloc = pluConcerne ? `
+    <div class="plu-alerte">
+      <div class="plu-alerte-header">
+        <div class="plu-alerte-ic">${icon('alert',22)}</div>
+        <div>
+          <div class="plu-alerte-title">Attention — Déclaration préalable obligatoire (PLU)</div>
+          <div class="plu-alerte-sub">Votre projet est soumis à une déclaration administrative avant le début des travaux. Sans validation, les travaux ne peuvent pas commencer.</div>
         </div>
-        ${pluConcerne && d.plu_adresse ? `
-        <div class="admin-col">
-          <div id="plu-map" class="plu-map"></div>
-          <div class="plu-addr">${icon('pin',13)} ${d.plu_adresse}</div>
-        </div>` : ''}
       </div>
+      <div class="plu-alerte-body">
+        ${d.plu_statut ? `<div class="plu-alerte-statut">
+          <span>Statut du dossier</span>
+          <span class="plu-statut-pill ${pluStatutClass[d.plu_statut]||''}">${pluStatutLabel[d.plu_statut]||d.plu_statut}</span>
+        </div>` : ''}
+        ${d.plu_adresse ? `<div id="plu-map" class="plu-map"></div>
+          <div class="plu-addr">${icon('pin',13)} ${d.plu_adresse}</div>` : ''}
+        ${d.plu_doc_url ? `<button class="fiche-btn" style="margin-top:12px" onclick="openLink('${d.plu_doc_url}')">
+          <span class="fiche-btn-ic">${icon('filetext',16)}</span>
+          <span class="fiche-btn-text">
+            <span class="fiche-btn-title">Document déposé en mairie</span>
+            <span class="fiche-btn-sub">Consulter le dossier d'urbanisme</span>
+          </span>
+          <span class="fiche-btn-arrow">${icon('arrowright',15)}</span>
+        </button>` : ''}
+      </div>
+    </div>` : '';
+
+  // === FINANCEMENT — bloc prominent si renseigné ===
+  const financementBloc = hasFinancementInfo ? `
+    <div class="financement-bloc">
+      <div class="financement-header">
+        ${icon('bank',20)}
+        <div class="financement-title">Informations de financement</div>
+      </div>
+      ${d.financement_ptz === 'true' ? `<div class="ptz-alerte">
+        ${icon('discount',16)}
+        <div>
+          <div class="ptz-alerte-title">Éco-PTZ disponible pour votre projet</div>
+          <div class="ptz-alerte-sub">Votre projet peut bénéficier d'un Éco-Prêt à Taux Zéro. Renseignez-vous auprès de votre banque ou de votre conseiller.</div>
+        </div>
+      </div>` : ''}
+      ${d.financement_conseil ? `<div class="financement-conseil">${d.financement_conseil}</div>` : ''}
     </div>` : '';
 
   // === DEVIS PDF ===
@@ -459,6 +461,7 @@ function renderClient(d) {
         ${projetBloc}
         ${avantagesBloc}
         ${pluBloc}
+        ${financementBloc}
         ${devisBloc}
         ${creneauxBloc}
         ${signBloc}

@@ -66,9 +66,8 @@ function setMoisAnnee() {
 function renderDashContent(periode, mois, annee) {
   const cont = document.getElementById('dash-content');
   const now = new Date();
-  const allDossiers = [..._dossiers, ..._savDossiers];
 
-  // Filtre par période
+  // Filtre par période — Pose uniquement pour tout le dashboard principal
   function inPeriod(d) {
     const dateStr = d.date1;
     if (!dateStr) return false;
@@ -82,84 +81,135 @@ function renderDashContent(periode, mois, annee) {
     return date.getMonth() === mois && date.getFullYear() === annee;
   }
 
-  const dossiersPeriode = allDossiers.filter(inPeriod);
-  const dossiersActifs = allDossiers.filter(d => parseInt(d.etape||1) < (d._type==='sav'?STEPS_SAV.length:STEPS_POSE.length));
+  // Pose uniquement
+  const poseDossiers = _dossiers; // jamais les SAV
+  const posePeriode  = poseDossiers.filter(inPeriod);
+  const poseActifs   = poseDossiers.filter(d => parseInt(d.etape||1) < STEPS_POSE.length);
+  const poseTermines = poseDossiers.filter(d => parseInt(d.etape||1) >= STEPS_POSE.length);
 
-  // Montant total de la période
-  const montantPeriode = dossiersPeriode.reduce((sum,d) => sum + (parseInt(d.prix_final)||parseInt(d.prix_est)||0), 0);
-  // Nombre de poses terminées (étape 8) dans la période
-  const posesTerminees = dossiersPeriode.filter(d => d._type!=='sav' && parseInt(d.etape)===8).length;
-  const savTermines = dossiersPeriode.filter(d => d._type==='sav' && parseInt(d.etape)===6).length;
+  // SAV — juste un compteur séparé
+  const savActifs   = _savDossiers.filter(d => parseInt(d.etape||1) < STEPS_SAV.length);
+  const savTermines = _savDossiers.filter(d => parseInt(d.etape||1) >= STEPS_SAV.length);
 
-  // Par conseiller — tous dossiers confondus (pas seulement la période)
+  const montantPeriode   = posePeriode.reduce((s,d)=>s+(parseInt(d.prix_final)||parseInt(d.prix_est)||0),0);
+  const montantEnCours   = poseActifs.reduce((s,d)=>s+(parseInt(d.prix_final)||parseInt(d.prix_est)||0),0);
+
+  // ─── Stats par étape (Pose active) ───
+  const etapeStats = STEPS_POSE.map((s,i) => ({
+    label:s.l, ic:s.ic,
+    count: poseDossiers.filter(d=>parseInt(d.etape||1)===i+1).length,
+    montant: poseDossiers.filter(d=>parseInt(d.etape||1)===i+1).reduce((sum,d)=>sum+(parseInt(d.prix_final)||parseInt(d.prix_est)||0),0)
+  }));
+  const maxEtape = Math.max(...etapeStats.map(e=>e.count),1);
+
+  // ─── Stats par gamme (Pose globale) ───
+  const gammeStats = {};
+  poseDossiers.forEach(d => {
+    const gamme = (d.gamme||'Autre').split(' (')[0]; // "Fenêtre (PVC)" → "Fenêtre"
+    if (!gammeStats[gamme]) gammeStats[gamme] = { count:0, enCours:0, montant:0 };
+    gammeStats[gamme].count++;
+    if (parseInt(d.etape||1) < STEPS_POSE.length) gammeStats[gamme].enCours++;
+    gammeStats[gamme].montant += parseInt(d.prix_final)||parseInt(d.prix_est)||0;
+  });
+  const gammeEntries = Object.entries(gammeStats).sort((a,b)=>b[1].count-a[1].count);
+  const maxGamme = Math.max(...gammeEntries.map(([,s])=>s.count),1);
+
+  // Couleurs par gamme
+  const gammeCouleurs = ['#78BE20','#4a9adc','#e67e22','#9b59b6','#e74c3c','#1abc9c','#f39c12'];
+
+  // ─── Stats par conseiller (Pose globale) ───
   const conseillerStats = {};
-  allDossiers.forEach(d => {
-    const c = d.conseiller || 'Non assigné';
-    if (!conseillerStats[c]) conseillerStats[c] = { total:0, enCours:0, termines:0, montant:0 };
+  poseDossiers.forEach(d => {
+    const c = d.conseiller||'Non assigné';
+    if (!conseillerStats[c]) conseillerStats[c] = {total:0,enCours:0,termines:0,montant:0};
     conseillerStats[c].total++;
-    const steps = d._type==='sav'?STEPS_SAV:STEPS_POSE;
-    if (parseInt(d.etape||1) >= steps.length) conseillerStats[c].termines++;
+    if (parseInt(d.etape||1)>=STEPS_POSE.length) conseillerStats[c].termines++;
     else conseillerStats[c].enCours++;
     conseillerStats[c].montant += parseInt(d.prix_final)||parseInt(d.prix_est)||0;
   });
 
-  // Par étape (Pose uniquement)
-  const etapeStats = STEPS_POSE.map((s,i) => ({
-    label: s.l, ic: s.ic,
-    count: _dossiers.filter(d => parseInt(d.etape||1) === i+1).length,
-    montant: _dossiers.filter(d => parseInt(d.etape||1) === i+1).reduce((sum,d)=>sum+(parseInt(d.prix_final)||parseInt(d.prix_est)||0),0)
-  }));
-
-  // Graphique mini-barres des étapes
-  const maxEtapeCount = Math.max(...etapeStats.map(e=>e.count), 1);
-
   cont.innerHTML = `
-    <!-- KPIs -->
+    <!-- KPIs Pose -->
     <div class="dash-kpis">
       <div class="dash-kpi">
         <div class="dash-kpi-val">${montantPeriode.toLocaleString('fr-FR')} €</div>
-        <div class="dash-kpi-label">Montant sur la période</div>
+        <div class="dash-kpi-label">Montant Pose (période)</div>
       </div>
       <div class="dash-kpi">
-        <div class="dash-kpi-val">${dossiersPeriode.length}</div>
-        <div class="dash-kpi-label">Dossiers ouverts</div>
+        <div class="dash-kpi-val">${posePeriode.length}</div>
+        <div class="dash-kpi-label">Poses ouvertes (période)</div>
       </div>
       <div class="dash-kpi">
-        <div class="dash-kpi-val">${posesTerminees}</div>
-        <div class="dash-kpi-label">Poses terminées</div>
+        <div class="dash-kpi-val">${poseTermines.length}</div>
+        <div class="dash-kpi-label">Poses terminées (global)</div>
       </div>
       <div class="dash-kpi">
-        <div class="dash-kpi-val">${savTermines}</div>
-        <div class="dash-kpi-label">SAV clôturés</div>
+        <div class="dash-kpi-val">${poseActifs.length}</div>
+        <div class="dash-kpi-label">Poses en cours</div>
       </div>
-      <div class="dash-kpi">
-        <div class="dash-kpi-val">${dossiersActifs.length}</div>
-        <div class="dash-kpi-label">Dossiers en cours (tous)</div>
+      <div class="dash-kpi" style="border-color:#f5dfa3;background:#fef9f0">
+        <div class="dash-kpi-val" style="color:#9a5b00">${montantEnCours.toLocaleString('fr-FR')} €</div>
+        <div class="dash-kpi-label">Montant en cours (global)</div>
       </div>
     </div>
 
-    <!-- Graphique étapes -->
+    <!-- Compteur SAV séparé -->
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div style="background:#fde4d6;border:1px solid #f5c8b3;border-radius:10px;padding:13px 18px;display:flex;align-items:center;gap:12px">
+        ${icon('alert',16)}
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#b5470a">${savActifs.length} SAV en cours</div>
+          <div style="font-size:11px;color:#9a4810;margin-top:1px">${savTermines.length} clôturé${savTermines.length>1?'s':''} au total</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graphique par étape -->
     <div class="ic" style="margin-bottom:16px">
-      <div class="ict">Répartition par étape (dossiers Pose actifs)</div>
+      <div class="ict">Répartition par étape — Pose uniquement</div>
       <div class="dash-etapes">
-        ${etapeStats.map(e => `
+        ${etapeStats.map(e=>`
           <div class="dash-etape-col">
             <div class="dash-etape-bar-wrap">
-              <div class="dash-etape-bar" style="height:${e.count?Math.max(e.count/maxEtapeCount*120,6):0}px"></div>
+              <div class="dash-etape-bar" style="height:${e.count?Math.max(e.count/maxEtape*120,6):0}px"></div>
             </div>
             <div class="dash-etape-count">${e.count}</div>
             <div class="dash-etape-label">${icon(e.ic,13)} ${e.label.split(' ').slice(-1)[0]}</div>
-            ${e.montant>0?`<div class="dash-etape-montant">${(e.montant/1000).toFixed(0)}k€</div>`:''}
+            ${e.montant>0?`<div class="dash-etape-montant">${(e.montant/1000).toFixed(0)}k€</div>`:'<div class="dash-etape-montant">—</div>'}
           </div>`).join('')}
       </div>
     </div>
 
+    <!-- Graphique par gamme -->
+    <div class="ic" style="margin-bottom:16px">
+      <div class="ict">Répartition par gamme de produit</div>
+      ${!gammeEntries.length ? '<div style="color:var(--mut2);padding:16px 0;text-align:center">Aucune donnée disponible.</div>' : `
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+        ${gammeEntries.map(([gamme,s],i)=>{
+          const couleur = gammeCouleurs[i%gammeCouleurs.length];
+          const pctBarre = Math.round(s.count/Math.max(poseDossiers.length,1)*100);
+          return `<div style="display:flex;align-items:center;gap:14px">
+            <div style="width:110px;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${gamme}">${gamme}</div>
+            <div style="flex:1;height:24px;background:#f0f0ec;border-radius:6px;overflow:hidden;position:relative">
+              <div style="width:${pctBarre}%;height:100%;background:${couleur};border-radius:6px;transition:width .5s ease;display:flex;align-items:center;padding-left:8px;min-width:24px">
+                <span style="font-size:11px;font-weight:700;color:white;white-space:nowrap">${s.count}</span>
+              </div>
+            </div>
+            <div style="text-align:right;min-width:80px">
+              <div style="font-size:12px;font-weight:700;color:var(--gd)">${s.montant>0?(s.montant/1000).toFixed(0)+'k €':'—'}</div>
+              <div style="font-size:10.5px;color:var(--mut)">${s.enCours} en cours</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`}
+    </div>
+
     <!-- Par conseiller -->
     <div class="ic" style="margin-bottom:16px">
-      <div class="ict">Dossiers par conseiller (global)</div>
+      <div class="ict">Dossiers Pose par conseiller</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
-        ${Object.entries(conseillerStats).sort((a,b)=>b[1].total-a[1].total).map(([nom,s]) => {
-          const pct = Math.round(s.termines/Math.max(s.total,1)*100);
+        ${Object.entries(conseillerStats).sort((a,b)=>b[1].total-a[1].total).map(([nom,s])=>{
+          const pct=Math.round(s.termines/Math.max(s.total,1)*100);
           return `<div class="dash-conseiller">
             <div class="dash-conseiller-av">${nom.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)}</div>
             <div style="flex:1;min-width:0">
@@ -179,17 +229,15 @@ function renderDashContent(periode, mois, annee) {
       </div>
     </div>
 
-    <!-- Dossiers de la période -->
+    <!-- Dossiers Pose de la période -->
     <div class="ic">
-      <div class="ict">Dossiers de la période</div>
-      ${!dossiersPeriode.length ? '<div style="color:var(--mut2);padding:16px 0;text-align:center">Aucun dossier sur cette période.</div>' :
-        dossiersPeriode.map(d => {
-          const steps = d._type==='sav'?STEPS_SAV:STEPS_POSE;
-          const e=parseInt(d.etape||1), s=steps[e-1];
-          const prix = d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+'&nbsp;€':d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+'&nbsp;€ est.':'—';
-          const typeTag = d._type==='sav'?`<span class="type-tag type-tag-sav">SAV</span>`:`<span class="type-tag type-tag-pose">Pose</span>`;
+      <div class="ict">Dossiers Pose de la période</div>
+      ${!posePeriode.length ? '<div style="color:var(--mut2);padding:16px 0;text-align:center">Aucun dossier Pose sur cette période.</div>' :
+        posePeriode.map(d=>{
+          const e=parseInt(d.etape||1),s=STEPS_POSE[e-1];
+          const prix=d.prix_final?parseInt(d.prix_final).toLocaleString('fr-FR')+' €':d.prix_est?parseInt(d.prix_est).toLocaleString('fr-FR')+' € est.':'—';
           return `<div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid #f0f0ec">
-            ${typeTag}
+            <span class="type-tag type-tag-pose">Pose</span>
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:700">${d.nom}</div>
               <div style="font-size:11px;color:var(--mut)">N° ${d.id} · ${d.conseiller||'—'} · ${d.date1||''}</div>
