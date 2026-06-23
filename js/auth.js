@@ -97,6 +97,7 @@ function doLoginAdmin() {
     sessionStorage.setItem('lm_auth','ok');
     sessionStorage.setItem('lm_role','admin');
     showView('vAdmin');
+    applyRoleUI();
     loadAll();
   } else {
     document.getElementById('lerr-admin').textContent = 'Mot de passe incorrect.';
@@ -112,6 +113,7 @@ function doLoginChef() {
     sessionStorage.setItem('lm_auth','ok');
     sessionStorage.setItem('lm_role','chef');
     showView('vAdmin');
+    applyRoleUI();
     loadAll();
   } else {
     document.getElementById('lerr-chef').textContent = 'Mot de passe incorrect.';
@@ -150,6 +152,7 @@ async function doLoginConseiller() {
     sessionStorage.setItem('lm_conseiller', JSON.stringify({id:c.id, nom:c.nom, email:c.email}));
     restore();
     showView('vAdmin');
+    applyRoleUI();
     loadAll();
   } catch(e) { errEl.textContent = 'Erreur : '+e.message; restore(); }
 }
@@ -195,5 +198,6 @@ async function saveNewPassword() {
   sessionStorage.setItem('lm_conseiller', JSON.stringify({id:c.id, nom:c.nom, email:c.email}));
   restore();
   showView('vAdmin');
+  applyRoleUI();
   loadAll();
 }

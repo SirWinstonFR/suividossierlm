@@ -124,18 +124,14 @@ window.onload = function() {
 function applyRoleUI() {
   const role = getRole();
   const c = getConseillerSession();
-  // Label header
   const lbl = document.getElementById('hdr-role-label');
   if (lbl) {
     if (role==='chef') lbl.textContent = 'Chef de Secteur';
     else if (role==='conseiller') lbl.textContent = `Conseiller · ${c?.nom||''}`;
     else lbl.textContent = 'Admin · Suivi pose';
   }
-  // Boutons conditionnels
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = role==='admin'?'':'none');
   document.querySelectorAll('.chef-only').forEach(el => el.style.display = role==='chef'?'':'none');
   document.querySelectorAll('.conseiller-only').forEach(el => el.style.display = role==='conseiller'?'':'none');
-
-  // Chef de Secteur → ouvre directement le dashboard
-  if (role === 'chef') openDashboard();
+  // Note : pour le Chef, openDashboard() est appelé à la fin de loadAll()
 }

@@ -31,7 +31,12 @@ async function loadAll() {
   populateGammeSelect();
   renderRdvBadge();
   lbar.done();
-  renderListe();
+  // Routage post-chargement selon le rôle
+  if (getRole() === 'chef') {
+    openDashboard();
+  } else {
+    renderListe();
+  }
 }
 
 function renderListe(f) {
