@@ -60,6 +60,9 @@ async function initClient(token) {
   showLoginClient();
 }
 
+// Helper — Google Sheets stocke TRUE en majuscules, on normalise
+function isTrue(val) { return String(val||'').toLowerCase() === 'true'; }
+
 function renderClient(d) {
   const e   = parseInt(d.etape)||1;
   const pct = Math.round(e / STEPS.length * 100);
@@ -206,8 +209,8 @@ function renderClient(d) {
     </div>` : '';
 
   // === PLU — bandeau d'alerte bien visible ===
-  const pluConcerne = d.plu_concerne === 'true';
-  const hasFinancementInfo = d.financement_ptz === 'true' || d.financement_conseil;
+  const pluConcerne = isTrue(d.plu_concerne);
+  const hasFinancementInfo = isTrue(d.financement_ptz) || d.financement_conseil;
   const pluStatutLabel = { en_attente:'En attente de dépôt', depose:'Déposé en mairie', valide:'Validé' };
   const pluStatutClass = { en_attente:'plu-statut-attente', depose:'plu-statut-depose', valide:'plu-statut-valide' };
 
@@ -245,7 +248,7 @@ function renderClient(d) {
         ${icon('bank',20)}
         <div class="financement-title">Informations de financement</div>
       </div>
-      ${d.financement_ptz === 'true' ? `<div class="ptz-alerte">
+      ${isTrue(d.financement_ptz) ? `<div class="ptz-alerte">
         ${icon('discount',16)}
         <div>
           <div class="ptz-alerte-title">Éco-PTZ disponible pour votre projet</div>
@@ -286,7 +289,7 @@ function renderClient(d) {
   }
 
   // === SIGNATURE — bon de commande (chargé automatiquement, posté par le conseiller) ===
-  const dejaSigne = d.signe === 'true';
+  const dejaSigne = isTrue(d.signe);
   const commandeDispo = !!d.commande_url;
   const signBloc = (e === 5 || dejaSigne) ? `
     <div class="sc">
@@ -347,7 +350,7 @@ function renderClient(d) {
     </div>` : '';
 
   // === DOCUMENT DE POSE ===
-  const poseDejaSigne = d.signe_pose === 'true';
+  const poseDejaSigne = isTrue(d.signe_pose);
   const poseDocBloc = (e === 7 || (poseDejaSigne && e >= 7)) && d.sig_data ? `
     <div class="sc">
       <div class="ict">Document de pose</div>
@@ -489,7 +492,7 @@ function renderClient(d) {
       </div>
     </div>`;
 
-  if (d.plu_concerne === 'true' && d.plu_adresse) {
+  if (isTrue(d.plu_concerne) && d.plu_adresse) {
     loadMiniMap(d.plu_adresse);
   }
 
