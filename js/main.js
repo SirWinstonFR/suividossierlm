@@ -126,7 +126,7 @@ function applyRoleUI() {
   const c = getConseillerSession();
   const lbl = document.getElementById('hdr-role-label');
   if (lbl) {
-    if (role==='chef') lbl.textContent = 'Chef de Secteur';
+    if (role==='chef') lbl.textContent = 'Leader';
     else if (role==='conseiller') lbl.textContent = `Conseiller · ${c?.nom||''}`;
     else lbl.textContent = 'Admin · Suivi pose';
   }

@@ -254,7 +254,11 @@ textarea{resize:vertical;min-height:72px}
 @media(max-width:560px){.admin-grid{grid-template-columns:1fr}}
 .alert-title{font-weight:700;font-size:13px}
 .alert-sub{font-size:12px;margin-top:4px;opacity:.85;line-height:1.5}
-.plu-map{margin-top:11px;height:200px;border-radius:10px;overflow:hidden;border:1px solid var(--mid);background:#f0f0ec}
+.plu-map{margin-top:0;height:200px;border-radius:10px;overflow:hidden;border:1px solid var(--mid);background:#f0f0ec}
+.plu-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:4px}
+.plu-col-map{}
+.plu-col-info{display:flex;flex-direction:column;justify-content:flex-start}
+@media(max-width:600px){.plu-cols{grid-template-columns:1fr}}
 /* PLU — bandeau d'alerte orange prominent */
 .plu-alerte{border-radius:13px;overflow:hidden;border:2px solid #e67e22;margin-bottom:0}
 .plu-alerte-header{background:#e67e22;padding:16px 20px;display:flex;gap:14px;align-items:flex-start}
@@ -488,7 +492,7 @@ textarea{resize:vertical;min-height:72px}
   <div class="hdr">
     <div class="logo"><div class="tri"></div><div class="logo-t" style="color:white">LEROY MERLIN<br><span class="logo-s">Suivi de votre pose</span></div></div>
   </div>
-  <div style="max-width:860px;margin:0 auto;padding:24px 16px">
+  <div style="max-width:1020px;margin:0 auto;padding:24px 16px">
     <div id="cli-body">
       <div style="text-align:center;padding:60px 20px;color:#aaa">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;display:block;margin-left:auto;margin-right:auto" class="icon-spin"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>Chargement de votre dossier...

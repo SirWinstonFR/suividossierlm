@@ -1,5 +1,5 @@
 // ============================================================
-// dashboard.js — Dashboard Chef de Secteur
+// dashboard.js — Dashboard Leader
 // ============================================================
 
 function openDashboard() {
@@ -28,7 +28,7 @@ function renderDashboard() {
     <div class="page" style="max-width:1100px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
         <div>
-          <div style="font-size:24px;font-weight:700">Dashboard Chef de Secteur</div>
+          <div style="font-size:24px;font-weight:700">Dashboard Leader</div>
           <div style="font-size:13px;color:var(--mut);margin-top:4px">Vue consolidée de l'activité Suivi Pose</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">

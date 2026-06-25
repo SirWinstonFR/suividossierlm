@@ -24,8 +24,8 @@ function canEdit(dossierConseiller) {
 
 function doLogout() {
   ['lm_auth','lm_role','lm_conseiller'].forEach(k => sessionStorage.removeItem(k));
-  showView('vLogin');
-  renderLoginPage();
+  // Rechargement complet — garantit un état propre pour une nouvelle session
+  window.location.reload();
 }
 
 // ============================================================
@@ -42,7 +42,7 @@ function renderLoginPage() {
 
         <div id="login-tabs" style="display:flex;gap:6px;margin-bottom:22px;background:#f5f5f3;border-radius:8px;padding:4px">
           <button id="ltab-conseiller" class="ltab ltab-active" onclick="switchLoginTab('conseiller')">Conseiller</button>
-          <button id="ltab-chef" class="ltab" onclick="switchLoginTab('chef')">Chef de Secteur</button>
+          <button id="ltab-chef" class="ltab" onclick="switchLoginTab('chef')">Leader</button>
           <button id="ltab-admin" class="ltab" onclick="switchLoginTab('admin')">Admin</button>
         </div>
 
@@ -61,7 +61,7 @@ function renderLoginPage() {
 
         <div id="login-form-chef" style="display:none">
           <div class="fg" style="margin-bottom:16px">
-            <label>Mot de passe Chef de Secteur</label>
+            <label>Mot de passe Leader</label>
             <input id="lpwd-chef" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLoginChef()">
           </div>
           <button class="btn btn-p" style="width:100%" onclick="doLoginChef()">Accéder au dashboard</button>
@@ -105,7 +105,7 @@ function doLoginAdmin() {
 }
 
 // ============================================================
-// CONNEXION CHEF DE SECTEUR
+// CONNEXION LEADER
 // ============================================================
 function doLoginChef() {
   const pwd = document.getElementById('lpwd-chef')?.value;
