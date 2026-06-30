@@ -5,7 +5,7 @@ const CFG = {
   SAV_SHEET_NAME: 'SAV',
   CONSEILLERS_SHEET_NAME: 'Conseillers',
   ADMIN_PWD:   'leroy2025',
-  CHEF_PWD:    'chef2025',   // À changer après le premier déploiement
+  CHEF_PWD:    'Corentin2026',   // À changer après le premier déploiement
   BASE_PATH:   '/suividossierlm',
   SCRIPT_URL:  'https://script.google.com/macros/s/AKfycbzVyE-VoVVtr9iuw3tsW38Iw-lbT_YGlneYlQpRznG9p-PjIfOAWWvNoMhF7FdhUe-Fcg/exec',
 };
